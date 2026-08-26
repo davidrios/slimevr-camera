@@ -9,7 +9,7 @@
 set -euo pipefail
 HOST=${VULCANUS:-david@192.168.15.27}
 HERE=$(cd "$(dirname "$0")/.." && pwd)
-rsync -a --delete --exclude .venv --exclude data --exclude __pycache__ --exclude .pytest_cache "$HERE/" "$HOST:~/work/slimevr-camera/"
+rsync -a --delete --exclude .venv --exclude /data --exclude __pycache__ --exclude .pytest_cache "$HERE/" "$HOST:~/work/slimevr-camera/"
 ssh "$HOST" 'set -e; export PATH=$HOME/.local/bin:$PATH
   command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
   cd ~/work/slimevr-camera && uv sync -q

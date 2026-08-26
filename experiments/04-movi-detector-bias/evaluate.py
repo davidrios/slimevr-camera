@@ -18,7 +18,7 @@ from pathlib import Path
 import cv2, numpy as np, pandas as pd
 from scipy.spatial.transform import Rotation as Rot
 
-from slimevr_camera.data.movi import ROOT, load_camera, load_subject
+from slimevr_camera.data.movi import ROOT, SEGMENTS, load_camera, load_subject
 from slimevr_camera.geometry import triangulate
 from slimevr_camera.heading import estimate_all
 from slimevr_camera.skeleton import KEYPOINTS, wrap
@@ -30,11 +30,7 @@ OUR2COCO = {k: (COCO.index(k) if k in COCO else COCO.index("nose") if k == "head
 # MoVi world is Z-up (mm). Our heading code assumes Y-up. Map (x,y,z)_movi -> (x, z, -y)_ours
 Z2Y = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]], float)
 
-# Which local axis of the Visual3D segment frame corresponds to the axis our
-# estimator observes.  Determined empirically in --calibrate-axes mode: the
-# segment-frame axis whose floor heading best matches the estimator on GT
-# joints (marker-derived) — then fixed here.
-SEG_AXIS: dict[str, np.ndarray] = {}
+SEG_CODE = {v: k for k, v in SEGMENTS.items() if v}
 
 
 def undistort(uv, cam):
@@ -49,16 +45,15 @@ def gt_joints_from_markers(s, mi):
     checking the estimator itself, independent of any detector."""
     M = {n: s.markers[mi, i] for i, n in enumerate(s.marker_names)}
     def mid(*names): return np.mean([M[n] for n in names], 0)
-    try:
+    try:   # Visual3D joint-centre virtual markers (*JC) = anatomical joint centres
         J = {
-            "head": mid("LFHD", "RFHD", "LBHD", "RBHD"),
-            "shoulderL": M["LSHO"], "shoulderR": M["RSHO"], "elbowL": M["LELB"], "elbowR": M["RELB"],
-            "wristL": mid("LWRA", "LWRB"), "wristR": mid("RWRA", "RWRB"),
-            "hipL": mid("LASI", "LPSI"), "hipR": mid("RASI", "RPSI"),
-            "kneeL": M["LKNE"], "kneeR": M["RKNE"], "ankleL": M["LANK"], "ankleR": M["RANK"],
+            "head": M["HEAD"],
+            "shoulderL": M["LSJC"], "shoulderR": M["RSJC"], "elbowL": M["LEJC"], "elbowR": M["REJC"],
+            "wristL": M["LWJC"], "wristR": M["RWJC"], "hipL": M["LHIP"], "hipR": M["RHIP"],   # *HJC are unfilled (zeros) in MoVi
+            "kneeL": M["LKJC"], "kneeR": M["RKJC"], "ankleL": M["LAJC"], "ankleR": M["RAJC"],
             "toeL": M["LTOE"], "toeR": M["RTOE"],
         }
-    except KeyError as e:
+    except KeyError:
         return None
     return np.stack([J[k] for k in KEYPOINTS])
 
@@ -114,8 +109,8 @@ def main():
                 if np.isnan(ax_d[0]).any() or np.isnan(ax_m[0]).any() or q_m[0] < 0.3: continue
                 # body yaw relative to camera baseline: hip lateral axis heading (marker-based)
                 hip_ax = estm["hip"][0][0]
-                A1 = s.affine[mi, s.segment_names.index([k for k, v in __import__("slimevr_camera.data.movi", fromlist=["SEGMENTS"]).SEGMENTS.items() if v == name][0])]
-                A2 = s.affine[mi + 4, s.segment_names.index([k for k, v in __import__("slimevr_camera.data.movi", fromlist=["SEGMENTS"]).SEGMENTS.items() if v == name][0])]
+                A1 = s.world_affine(mi).get(name); A2 = s.world_affine(mi + 4).get(name)
+                if A1 is None or A2 is None: continue
                 if np.any(A2[:3, 3] <= -1e8): continue
                 dR = Rot.from_matrix(A2[:3, :3] @ A1[:3, :3].T); speed = np.rad2deg(np.linalg.norm(dR.as_rotvec())) * 30   # deg/s (4 mocap frames = 1/30 s)
                 rows.append(dict(subject=subj, frame=f, motion=motion, bone=name,
@@ -129,7 +124,7 @@ def main():
     g = df.groupby(["bone", "still"]).err_deg.agg(n="size", bias="mean", noise="std", mae=lambda x: x.abs().mean(), p95=lambda x: x.abs().quantile(.95)).round(2)
     print("heading error vs marker-derived reference, per bone (still = GT segment speed < %.0f deg/s):" % a.still_deg_s); print(g.to_string())
     # bias vs body yaw bins (still frames only)
-    st = df[df.still].copy(); st["yaw_bin"] = (st.body_yaw // 45 * 45).astype(int)
+    st = df[df.still].dropna(subset=["body_yaw"]).copy(); st["yaw_bin"] = (st.body_yaw // 45 * 45).astype(int)
     print("\nbias (mean err) by body yaw bin, still frames:"); print(st.pivot_table(index="bone", columns="yaw_bin", values="err_deg", aggfunc="mean").round(1).to_string())
     print("\nper-motion MAE (all bones):"); print(df.groupby("motion").err_deg.apply(lambda x: x.abs().mean()).round(2).sort_values().to_string())
 
