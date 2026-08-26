@@ -10,3 +10,4 @@
 8. **Python**: 3.12 only (best library support), managed with **uv**. This repo is a uv project (`pyproject.toml`, `src/slimevr_camera/`); run things with `uv run`, add deps with `uv add`. Third-party model repos that need their own env get their own uv project under `tools/<name>/`, never installed into the system Python.
 9. Don't commit video to the repo (size, and it is other people's data). Raw video donation from users is acceptable per David (opt-in, HMD anonymizes).
 10. **Code map**: `src/slimevr_camera/{skeleton,geometry,heading,pipeline}.py` are the reusable core; `synth/` is synthetic-only. Run tests with `uv run pytest -q tests`. Experiments call the package, never the reverse.
+11. **Storage**: the root volume is nearly full. All datasets, model weights and large outputs go under `/mnt/data2/david/work/slimevr-camera-data/` and are symlinked into `data/` (e.g. `data/movi -> /mnt/data2/.../movi`). Never download large files into the repo or `/tmp`.
