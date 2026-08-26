@@ -12,9 +12,6 @@ HERE=$(cd "$(dirname "$0")/.." && pwd)
 rsync -a --delete --exclude .venv --exclude /data --exclude __pycache__ --exclude .pytest_cache "$HERE/" "$HOST:~/work/slimevr-camera/"
 ssh "$HOST" 'set -e; export PATH=$HOME/.local/bin:$PATH
   command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
-  cd ~/work/slimevr-camera && uv sync -q
-  uv pip install -q --python .venv --reinstall --no-deps "onnxruntime-gpu==1.29.0" \
-     --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
-  uv pip install -q --python .venv --upgrade "nvidia-cuda-runtime-cu12==12.9.*" "nvidia-cublas-cu12==12.9.*" \
-     "nvidia-cufft-cu12==11.4.*" "nvidia-curand-cu12==10.3.10.*" "nvidia-cuda-nvrtc-cu12==12.9.*" "nvidia-cudnn-cu12==9.*"
+  cd ~/work/slimevr-camera && uv sync -q --extra cuda
+  # onnxruntime-gpu cu12 build + CUDA libs are declared in pyproject (tool.uv index + "cuda" extra)
   uv run --no-sync python -c "import onnxruntime as ort; ort.preload_dlls(); print(\"ORT\", ort.__version__, ort.get_available_providers())"'

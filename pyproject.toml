@@ -9,7 +9,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "matplotlib>=3.11.1",
     "numpy>=2.5.2",
-    "onnxruntime-gpu>=1.29.0",
+    "onnxruntime-gpu==1.29.0",
     "opencv-python-headless>=5.0.0.93",
     "pandas>=3.0.5",
     "pypdf>=6.16.2",
@@ -19,6 +19,29 @@ dependencies = [
 
 [project.scripts]
 slimevr-camera = "slimevr_camera:main"
+
+[project.optional-dependencies]
+# GPU box (vulcanus, driver 550 => CUDA 12.x). onnxruntime-gpu comes from the CUDA-12 index (see tool.uv);
+# the nvidia-* wheels supply the CUDA 12.9 runtime (minor-version compatible with the 12.4 driver).
+cuda = [
+    "nvidia-cuda-runtime-cu12==12.9.*",
+    "nvidia-cublas-cu12==12.9.*",
+    "nvidia-cufft-cu12==11.4.*",
+    "nvidia-curand-cu12==10.3.10.*",
+    "nvidia-cuda-nvrtc-cu12==12.9.*",
+    "nvidia-cudnn-cu12==9.*",
+]
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
+[[tool.uv.index]]
+name = "ort-cu12"
+url = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"
+explicit = true
+
+[tool.uv.sources]
+onnxruntime-gpu = { index = "ort-cu12" }
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
