@@ -4,7 +4,8 @@ Drift model (VIP-style, D14): measured = R_y(delta_psi(t)) * true, one angle
 about world-up per tracker. delta_psi grows by
   - random walk        sigma_rw * sqrt(dt)
   - constant bias      bias * dt
-  - scale-factor error k * |yaw rate| * dt   (dominant per drift-lab/FINDINGS.md)
+  - scale-factor error k * yaw_rate * dt     (SIGNED: measured rate = (1+k) true rate;
+    dominant per drift-lab/FINDINGS.md; back-and-forth motion partly cancels)
 """
 from __future__ import annotations
 
@@ -13,14 +14,14 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
-from ..skeleton import UP, heading_of, wrap
+from ..skeleton import UP, yaw_rate
 
 
 @dataclass
 class ImuConfig:
     rw_deg_per_sqrt_s: float = 0.02
-    bias_deg_per_min: tuple[float, float] = (-3.0, 3.0)   # drift-lab run A: BNO085 static 0.2–4.4 deg/min per unit    # per tracker, uniform
-    scale_error: tuple[float, float] = (-0.004, 0.004)        # per tracker, fraction of yaw rotation
+    bias_deg_per_min: tuple[float, float] = (-0.02, 0.02)   # drift-lab run A: static drift < 1 deg/hour
+    scale_error: tuple[float, float] = (-0.0045, 0.0045)     # drift-lab turntable: +0.43 % / -0.23 % measured
     gyro_noise_deg_s: float = 0.3
     seed: int = 1
 
@@ -33,12 +34,11 @@ def simulate(world: dict[str, Rot], fps: float, cfg: ImuConfig, trackers: list[s
     for name in trackers:
         R = world[name]
         T = len(R)
-        psi = heading_of(R)
-        yaw_rate = np.abs(wrap(np.diff(psi, prepend=psi[0]))) / dt
+        wy = yaw_rate(R, fps)
         bias = np.deg2rad(rng.uniform(*cfg.bias_deg_per_min)) / 60
         k = rng.uniform(*cfg.scale_error)
         rw = np.deg2rad(cfg.rw_deg_per_sqrt_s) * np.sqrt(dt) * rng.standard_normal(T)
-        d = np.cumsum(rw + bias * dt + k * yaw_rate * dt)
+        d = np.cumsum(rw + bias * dt + k * wy * dt)
         d -= d[0]   # perfect full reset at t=0
         drift[name] = d
         meas[name] = Rot.from_rotvec(np.outer(d, UP)) * R

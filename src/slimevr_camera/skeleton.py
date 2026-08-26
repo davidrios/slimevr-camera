@@ -98,3 +98,11 @@ def heading_of_vec(v: np.ndarray) -> np.ndarray:
 
 def wrap(a):
     return (a + np.pi) % (2 * np.pi) - np.pi
+
+
+def yaw_rate(R: Rot, fps: float) -> np.ndarray:
+    """Signed angular rate about world-up (rad/s), from consecutive orientations.
+    This is what a yaw-axis gyro scale error multiplies."""
+    rel = R[1:] * R[:-1].inv()
+    w = rel.as_rotvec() @ UP * fps
+    return np.concatenate([[0.0], w])

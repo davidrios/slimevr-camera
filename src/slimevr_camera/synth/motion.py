@@ -21,6 +21,7 @@ class MotionConfig:
     active_s: tuple[float, float] = (15.0, 40.0)   # active phase length range
     still_s: tuple[float, float] = (3.0, 8.0)      # still phase length range
     tremor_deg: float = 0.3                        # joint jitter while "still"
+    turns_per_min: float = 2.0                     # in-place turns (VR users turn around); each +-90..360 deg
     seed: int = 0
 
 
@@ -70,6 +71,13 @@ def generate(cfg: MotionConfig):
     zero = np.zeros(T)
 
     root_yaw = np.cumsum(sym(3.0) * a) / cfg.fps * 10             # slow wander (deg)
+    # discrete in-place turns: smooth ramps of +-(90..360) deg, ~2 s each, only while active
+    n_turns = int(cfg.turns_per_min * cfg.duration_s / 60)
+    turn_rate = np.zeros(T)
+    for _ in range(n_turns):
+        t0 = int(rng.uniform(0, T - 2 * cfg.fps)); amp = rng.choice([-1, 1]) * rng.uniform(90, 360)
+        n = int(2 * cfg.fps); win = np.hanning(n); turn_rate[t0:t0 + n] += amp * win / win.sum()
+    root_yaw = root_yaw + np.cumsum(turn_rate * a)
     local = {}
     local["hip"] = Rot.from_euler("xyz", np.stack([d2r(sym(10)), d2r(root_yaw), d2r(sym(5))], -1))
     local["waist"] = euler(sym(8), sym(10), sym(4))

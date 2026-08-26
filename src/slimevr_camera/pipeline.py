@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation as Rot
 
 from .geometry import Camera, triangulate
 from .heading import estimate_all
-from .skeleton import UP, heading_of, heading_of_vec, wrap
+from .skeleton import UP, heading_of, heading_of_vec, wrap, yaw_rate  # noqa: F401
 
 
 @dataclass
@@ -84,22 +84,60 @@ def measure_windows(P: np.ndarray, meas: dict[str, Rot], windows: list[Window], 
     return out
 
 
-def apply_corrections(meas: dict[str, Rot], ms: list[Measurement], alpha: float = 1.0) -> tuple[dict[str, Rot], dict[str, np.ndarray]]:
-    """Piecewise-constant per-tracker yaw correction updated at each window end.
-    alpha=1: replace with the latest measurement; <1: exponential blend."""
-    corrected, corr = {}, {}
+@dataclass
+class ScaleLearner:
+    """Recursive least squares for a per-tracker yaw scale error k:
+    the change in required correction between two windows should equal
+    -k x (signed yaw rotation travelled between them)."""
+    prior_var: float = (0.02) ** 2      # k ~ +-2 % a priori (drift-lab: 0.2-0.4 %)
+    meas_var_deg: float = 1.0            # camera heading noise per window (deg)
+    min_travel_deg: float = 45.0         # ignore windows with too little net rotation in between
+    k: float = 0.0
+    var: float = None
+
+    def __post_init__(self):
+        self.var = self.prior_var
+
+    def update(self, delta_corr: float, travel: float):
+        if abs(travel) < np.deg2rad(self.min_travel_deg):
+            return
+        # model: delta_corr = -k * travel + noise
+        h = -travel
+        r = np.deg2rad(self.meas_var_deg) ** 2
+        g = self.var * h / (h * self.var * h + r)
+        self.k += g * (delta_corr - h * self.k)
+        self.var *= (1 - g * h)
+
+
+def apply_corrections(meas: dict[str, Rot], ms: list[Measurement], fps: float = 30.0,
+                      learn_scale: bool = False) -> tuple[dict[str, Rot], dict[str, np.ndarray], dict[str, float]]:
+    """Per-tracker yaw correction updated at each window end.
+    Without scale learning: piecewise constant.  With it: between windows the
+    correction is extrapolated as c + k_hat * (signed yaw rotation travelled
+    since the window), and k_hat is refined from each new window."""
+    corrected, corr, khat = {}, {}, {}
     for name, R in meas.items():
         T = len(R)
+        travel = np.cumsum(yaw_rate(R, fps)) / fps      # signed yaw rotation travelled (rad)
         c = np.zeros(T)
-        cur = 0.0
+        cur, t_last, learner = 0.0, None, ScaleLearner()
         for m in ms:
-            if name in m.heading_cam:
-                d = wrap(m.heading_cam[name] - m.heading_imu[name])
-                cur = wrap(cur + alpha * wrap(d - cur)) if alpha < 1 else d
+            if name not in m.heading_cam:
+                continue
+            d = wrap(m.heading_cam[name] - m.heading_imu[name])   # total correction needed now
+            if learn_scale:
+                t_end = min(m.window.end, T - 1)
+                if t_last is not None:
+                    learner.update(wrap(d - cur), travel[t_end] - travel[t_last])
+                cur, t_last = d, t_end
+                c[t_last:] = cur - learner.k * (travel[t_last:] - travel[t_last])
+            else:
+                cur = d
                 c[m.window.end:] = cur
         corr[name] = c
+        khat[name] = learner.k
         corrected[name] = Rot.from_rotvec(np.outer(c, UP)) * R
-    return corrected, corr
+    return corrected, corr, khat
 
 
 def heading_errors(truth: dict[str, Rot], est: dict[str, Rot]) -> dict[str, np.ndarray]:

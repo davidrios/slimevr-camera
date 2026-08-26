@@ -24,7 +24,7 @@ def run(pixel_noise: float, duration: float, seed: int, fps: float = 30.0, plot:
     gate = GateConfig()
     wins = still_windows(imu["gyro_speed"], fps, gate)
     ms = measure_windows(P, imu["meas"], wins, gate)
-    corrected, corr = apply_corrections(imu["meas"], ms)
+    corrected, corr, _ = apply_corrections(imu["meas"], ms, fps)
     before = summarize(heading_errors(world, imu["meas"]))
     after = summarize(heading_errors(world, corrected))
     # camera-only measurement error inside windows (the number the literature lacks)
