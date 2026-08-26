@@ -1,0 +1,26 @@
+[project]
+name = "slimevr-camera"
+version = "0.1.0"
+description = "Camera-assisted drift correction for SlimeVR IMU trackers"
+authors = [
+    { name = "David Rios", email = "david.rios.gomes@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.2",
+    "pandas>=3.0.5",
+    "scipy>=1.18.1",
+]
+
+[project.scripts]
+slimevr-camera = "slimevr_camera:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

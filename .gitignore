@@ -1,0 +1,14 @@
+*.mp4
+*.mkv
+*.avi
+data/runs/*/video*
+.venv/
+__pycache__/
+*.pt
+*.onnx
+*.safetensors
+
+# results are regenerable but small; keep them
+!experiments/*/results/
+src/*.egg-info/
+.pytest_cache/
