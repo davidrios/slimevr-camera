@@ -12,3 +12,4 @@ __pycache__/
 !experiments/*/results/
 src/*.egg-info/
 .pytest_cache/
+data/movi/
