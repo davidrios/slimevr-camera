@@ -41,6 +41,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 | D26 | 2026-08-26 | **No offline drift model.** Tracker error is treated as unknown per unit (unbounded variety of sensors/builds). The camera is the only ground truth; per-unit drift statistics are estimated *at runtime* from the camera's own corrections and used only to schedule the next correction. Exp 03 becomes optional (harness calibration for David's units). | David: variability across tracker sets makes extrapolation from a few datapoints impossible. |
 | D27 | 2026-08-26 | **Research effort goes to the camera side:** pose-estimation robustness in diverse real conditions (rooms, lighting, cheap RTSP cameras, headset+controllers, clothing, occlusion). AI training is expected to pay off there, not in IMU modelling. IMU-side experiments stop after exp 02. | David. Self-supervised signal: IMU is trustworthy for a while after a reset → pseudo-labels for limb heading in the wild. |
 | D28 | 2026-08-26 | Core bet: fine-tune a pose estimator for VR full-body-tracking conditions (fixed room, 1–2 fixed cheap cameras, headset+controllers, constrained/dance-like motion). Side benefit: cheap mocap for games/film. Plan: BEDLAM-style synthetic pipeline starts now; TotalCapture (or equivalent marker-GT multi-view set) for detector-bias measurement when access arrives. | David. |
+| D29 | 2026-08-26 | Experiment 04 (detector heading bias) starts on **MoVi** (open download, 2 calibrated synced cams, Qualisys marker GT); TotalCapture/Fit3D later | Only marker-GT multi-view set with zero access friction; 2 views matches deployment. No public set has headset wearers → synthetic for that. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
 
 ## Open questions (blocking or shaping)
@@ -54,7 +55,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 0. (optional) David runs experiment 03 to calibrate the harness for his units; `analyze.py` ready.
 1. **Runtime drift-statistics scheduler (design, small):** per tracker, from successive camera corrections and the gross motion between them, estimate its own σ̂_m online (robust, conservative prior) and trigger the next correction when predicted error exceeds budget. No offline model. Add to harness; evaluate against unknown/varying σ_m per tracker.
-2. **Experiment 04 — real detector, diverse conditions (the main line now):** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
+2. **Experiment 04 — real detector heading bias on MoVi** (download, RTMPose via rtmlib on both views, triangulate, per-bone heading vs Qualisys truth using `slimevr_camera.heading`; report bias per bone vs view angle, subject, motion). Then diverse-conditions robustness: run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
 2a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
 2b. TotalCapture adapter once access is granted (request sent 2026-08-26, awaiting reply) (same pipeline, real IMU + Vicon truth).
 3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
@@ -62,6 +63,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Log
 
+- 2026-08-26 — §G2 dataset verification: MoVi chosen to start exp 04 (D29); no headset datasets exist.
 - 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.
 - 2026-08-26 — David: no offline drift model (D26); effort goes to camera-side robustness + AI training (D27). Exp 03 demoted to optional. No rigid bar exists (protocol fixed).
 - 2026-08-26 — Exp 03 protocol written (David's known-pose return procedure; BVH rejected as post-correction, DriftLogger instead; jig for pose repeatability).

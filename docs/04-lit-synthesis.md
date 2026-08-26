@@ -202,3 +202,39 @@ precisely the hole a camera fills.**
    correction should estimate heading offset *and* watch for mounting change.
 3. Don't trust any dataset's IMU heading as ground truth below ~10°; use
    optical GT (Vicon) for heading truth.
+
+## §G2 Multi-view RGB + marker-based 3D GT (for detector-bias measurement)  (2026-08-26, 22 datasets in `literature/datasets-multiview-gt.md`)
+
+**Headline: TotalCapture is the best fit but gated; MoVi is downloadable
+today and good enough to start; nothing public has VR-headset wearers with
+independent GT.**
+
+Ranked for measuring 2D-detector heading bias (needs GT *not* derived from a detector):
+1. **TotalCapture** — Vicon (joint angles), 8 static genlocked 1080p/60 cams,
+   IMUs. Email + registration; Surrey's own record lists CC-BY-NC (softer
+   than the site text). Request sent 2026-08-26.
+2. **Fit3D** (+CHI3D/HumanSC3D) — Vicon 25 joints + SMPL-X rotations, 4 static
+   900² /50 fps calibrated cams, constrained indoor fitness motion (close to
+   dance/VR regime). Access via IMAR account; PI requirement unverified.
+3. **MoVi** — Qualisys 67-marker GT + rotations, 2 hardware-synced calibrated
+   FLIR cams (800×600/30) + 2 iPhones, 90 subjects, 17 Noitom IMUs. **Open
+   direct download (Borealis Dataverse), no registration.** Low-res, two
+   views — which is exactly our deployment geometry.
+
+Runners-up: MAMMAEval (Vicon + studio cams, swing dance, MPI account),
+HumanEva (tiny), MPI-INF-3DHP (open, 14 cams, but GT is markerless Captury →
+not fully independent). Human3.6M: academic email + named advisor → treat as
+unavailable.
+
+**Circular (GT triangulated from a 2D detector) — fine for fine-tuning and
+motion content, NOT for bias measurement:** CMU Panoptic, AIST++ (dance),
+HuMMan, RICH, EgoBody, EMHI, ASPset.
+
+**VR headsets:** none with marker GT + multi-view RGB. EgoBody (HoloLens2,
+circular GT), EMHI (PICO 4, third-person RGB apparently unreleased), WHIP
+(2026, Quest 3 + Captury, release unverified). → Headset robustness must
+come from **synthetic** data (§H) and our own recordings.
+
+**Decision:** start experiment 04 on **MoVi** now (2 calibrated views, marker
+truth, 90 subjects, IMUs as a bonus); move to TotalCapture/Fit3D when
+access arrives for higher resolution and more views.
