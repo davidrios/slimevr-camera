@@ -48,7 +48,6 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 - **Q17 Measure σ_m** — protocol agreed in principle: `experiments/03-onbody-drift/PROTOCOL.md` (worn set, reset in a jigged known pose, move, return + hold, repeat; DriftLogger raw @100 Hz, not BVH). Waiting on David to run it.
 - Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
-- **Q18 Where is the RTX 3090?** This machine has only the RX 9060 XT (amdgpu; no NVIDIA driver/device). onnxruntime-gpu's CUDA provider is installed but has no device. Is the 3090 in another box (remote runs), or not installed? Until answered, model inference here is CPU (fine for MoVi 800×600) or ROCm.
 - Q6b Exact RTSP camera model/resolution/fps. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
 - Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
 
@@ -64,6 +63,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Log
 
+- 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
 - 2026-08-26 — §G2 dataset verification: MoVi chosen to start exp 04 (D29); no headset datasets exist.
 - 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.
