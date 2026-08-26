@@ -56,7 +56,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 0. (optional) David runs experiment 03 to calibrate the harness for his units; `analyze.py` ready.
 1. **Runtime drift-statistics scheduler (design, small):** per tracker, from successive camera corrections and the gross motion between them, estimate its own σ̂_m online (robust, conservative prior) and trigger the next correction when predicted error exceeds budget. No offline model. Add to harness; evaluate against unknown/varying σ_m per tracker.
-2. **Experiment 04 — real detector heading bias on MoVi** (download, RTMPose via rtmlib on both views, triangulate, per-bone heading vs Qualisys truth using `slimevr_camera.heading`; report bias per bone vs view angle, subject, motion). Then diverse-conditions robustness: run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
+2. **Experiment 04 — real detector heading bias on MoVi** — IN PROGRESS: pilot (subjects 1–5, both FLIR views) downloaded to /mnt/data2; calibration convention verified by marker reprojection; RTMPose-m (rtmlib, CPU ~8 fps) running over the pilot; `evaluate.py` drafted (marker-derived reference joints vs detector-triangulated, same-axis heading, still/moving split, bias vs body yaw). Next: run evaluate on subject 1, clean up, then full pilot table. (download, RTMPose via rtmlib on both views, triangulate, per-bone heading vs Qualisys truth using `slimevr_camera.heading`; report bias per bone vs view angle, subject, motion). Then diverse-conditions robustness: run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
 2a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
 2b. TotalCapture adapter once access is granted (request sent 2026-08-26, awaiting reply) (same pipeline, real IMU + Vicon truth).
 3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
@@ -64,6 +64,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Log
 
+- 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
 - 2026-08-26 — §G2 dataset verification: MoVi chosen to start exp 04 (D29); no headset datasets exist.
 - 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.
 - 2026-08-26 — David: no offline drift model (D26); effort goes to camera-side robustness + AI training (D27). Exp 03 demoted to optional. No rigid bar exists (protocol fixed).
