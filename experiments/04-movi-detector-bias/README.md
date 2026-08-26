@@ -97,3 +97,25 @@ subjects, 5-s windows, per-yaw-bin bias with more data.
   > hip > thigh).
 - Two views at 800×600 from 4.5 m is a pessimistic setup; resolution and
   baseline are cheap to improve.
+
+## Update: 5 subjects, and a bigger detector (2026-08-26)
+
+**All 5 pilot subjects, body-balanced** (47k bone-frames, 66 still windows):
+1-s rolling-mean sd — chest 5.1°, hip 7.5°, shins 8.0 / 9.6°, thighs 12.5 /
+12.9°. Same picture as 3 subjects; window-level MAE chest 3.6°, hip 5.7°
+(n=22 / 33 windows).
+
+**Model size does not fix it.** Subjects 1–2, 1-s rolling-mean sd,
+RTMPose-m "body-balanced" → RTMPose-x "wholebody-performance":
+chest 4.9 → 4.65°, hip 7.4 → 6.7°, shin L/R 6.7/5.2 → 6.3/5.2°,
+thigh L/R 10.4/7.8 → 11.2/8.0°. Within noise. → The pose-dependent heading
+error is **structural to how these detectors place joints**, not a capacity
+problem. Fine-tuning on our regime with a heading-aware objective is the
+lever, not a bigger backbone.
+
+**Feet are the best bone when still** (wholebody gives toes): still-frame
+per-frame sd 4.9 / 2.4°, MAE 1.9 / 1.6° (L / R); 1-s rolling sd 7.1 / 5.9°
+when moving is included. Heel→toe is a long, nearly horizontal, well-seen
+axis. This reverses the synthetic-era assumption (D19) that feet would be the
+hard case: **feet and chest are the most reliable heading sources; thighs the
+least.**
