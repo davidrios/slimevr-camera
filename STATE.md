@@ -49,7 +49,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Next actions
 
-0. **David runs experiment 03** (on-body drift protocol); Claude writes `experiments/03-onbody-drift/analyze.py` beforehand (hold detection, per-tracker yaw error, gross motion, σ_m fit).
+0. **David runs experiment 03** (`experiments/03-onbody-drift/PROTOCOL.md`). `analyze.py` is ready (auto hold detection or `--holds`, per-tracker yaw error vs reset pose, increments, gross motion, tilt, σ_m fit); validated on drift-lab runX (reproduces the turntable increments).
 1. **Experiment 02 — bias, not noise:** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
 1a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
 1b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
