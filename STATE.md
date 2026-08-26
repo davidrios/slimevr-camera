@@ -56,7 +56,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 1. **Runtime drift-statistics scheduler (design, small):** per tracker, from successive camera corrections and the gross motion between them, estimate its own σ̂_m online (robust, conservative prior) and trigger the next correction when predicted error exceeds budget. No offline model. Add to harness; evaluate against unknown/varying σ_m per tracker.
 2. **Experiment 04 — real detector, diverse conditions (the main line now):** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
 2a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
-2b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
+2b. TotalCapture adapter once access is granted (request sent 2026-08-26, awaiting reply) (same pipeline, real IMU + Vicon truth).
 3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
 4. Literature pass 2 (now higher priority): **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
 
