@@ -19,7 +19,7 @@ from ..skeleton import UP, heading_of, wrap
 @dataclass
 class ImuConfig:
     rw_deg_per_sqrt_s: float = 0.15
-    bias_deg_per_min: tuple[float, float] = (-0.5, 0.5)    # per tracker, uniform
+    bias_deg_per_min: tuple[float, float] = (-3.0, 3.0)   # drift-lab run A: BNO085 static 0.2–4.4 deg/min per unit    # per tracker, uniform
     scale_error: tuple[float, float] = (-0.004, 0.004)        # per tracker, fraction of yaw rotation
     gyro_noise_deg_s: float = 0.3
     seed: int = 1

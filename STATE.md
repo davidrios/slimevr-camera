@@ -55,6 +55,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 - 2026-08-26 — TotalCapture access email drafted; D23 revised: fine-tuning/open weights asked of licensor rather than forbidden.
 
+- 2026-08-26 — drift-lab run A read: BNO085 static yaw drift 0.2–4.4 °/min per unit (`notes/drift-lab-numbers.md`); synthetic IMU bias default raised to ±3 °/min. Detector bias needs video — drift-lab can't provide it.
 - 2026-08-26 — Experiment 01 done: harness works; noise is not the threat, bias and correction frequency are. Key formulation: compare the *same physical axis* on camera and IMU sides (drift rotates every axis' floor projection equally). David suggested game-engine/generative synthetic data → agenda §H.
 - 2026-08-26 — PR #1805 deep-read: monocular 2D projected-direction residual, walk-in-circle for limbs, torso IMU-only; several math bugs; borrow <10% (pinhole classes, LM+numerical Jacobian, recorder, SimCC decoder). Integration slot decided (D22).
 - 2026-08-26 — Q&A round 3: per-bone target (D19), PR #1805 reference-only (D20), specific camera OK (D21).
