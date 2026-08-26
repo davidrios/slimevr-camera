@@ -40,6 +40,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 | D25 | 2026-08-26 (rev.) | Drift model = unpredictable random walk driven by *gross* 3D motion (σ_m, unmeasured) + minor yaw-scale term. Correction trigger = demand-driven on gross motion since last correction. Scale-learning dropped (fits noise). | David: drift appears with modest movement, no turning; predictable error would be calibrated away. Exp 02 revision: residual ∝ σ_m·√(gross motion); cadence requirement hinges on σ_m. |
 | D26 | 2026-08-26 | **No offline drift model.** Tracker error is treated as unknown per unit (unbounded variety of sensors/builds). The camera is the only ground truth; per-unit drift statistics are estimated *at runtime* from the camera's own corrections and used only to schedule the next correction. Exp 03 becomes optional (harness calibration for David's units). | David: variability across tracker sets makes extrapolation from a few datapoints impossible. |
 | D27 | 2026-08-26 | **Research effort goes to the camera side:** pose-estimation robustness in diverse real conditions (rooms, lighting, cheap RTSP cameras, headset+controllers, clothing, occlusion). AI training is expected to pay off there, not in IMU modelling. IMU-side experiments stop after exp 02. | David. Self-supervised signal: IMU is trustworthy for a while after a reset → pseudo-labels for limb heading in the wild. |
+| D28 | 2026-08-26 | Core bet: fine-tune a pose estimator for VR full-body-tracking conditions (fixed room, 1–2 fixed cheap cameras, headset+controllers, constrained/dance-like motion). Side benefit: cheap mocap for games/film. Plan: BEDLAM-style synthetic pipeline starts now; TotalCapture (or equivalent marker-GT multi-view set) for detector-bias measurement when access arrives. | David. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
 
 ## Open questions (blocking or shaping)
@@ -61,6 +62,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Log
 
+- 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.
 - 2026-08-26 — David: no offline drift model (D26); effort goes to camera-side robustness + AI training (D27). Exp 03 demoted to optional. No rigid bar exists (protocol fixed).
 - 2026-08-26 — Exp 03 protocol written (David's known-pose return procedure; BVH rejected as post-correction, DriftLogger instead; jig for pose repeatability).
 - 2026-08-26 — Exp 02 revised after David's objection: 'net turning' conclusion retracted; motion-driven random walk added to IMU model; σ_m measurement (drift-lab run E) proposed. D25 rewritten.
