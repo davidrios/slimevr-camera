@@ -17,8 +17,8 @@ moves the feet by roughly `sin(10°) × leg length ≈ 15 cm`.
 ## Where the error comes from
 
 - **Pitch and roll** are continuously observable from gravity through the
-  accelerometer. They do not drift (they jitter, and they are wrong during
-  sustained acceleration, but they recover).
+  accelerometer. They do not integrate error, but accelerometer bias drifts
+  with temperature (up to ~5° tilt per hour on some units, drift-lab).
 - **Yaw** (heading about world vertical) is *not* observable from gravity.
   Without a magnetometer (most SlimeVR users run mag off because indoor fields
   are unusable) yaw is pure gyro integration. Every gyro bias, scale-factor

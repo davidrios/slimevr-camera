@@ -36,6 +36,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 | D21 | 2026-08-26 | Requiring a specific camera model (or a hacked one) for forced night mode / IR is acceptable | David. Keeps IR-beacon and controller-LED options open. |
 | D22 | 2026-08-26 | Integration slot = the existing Stay Aligned raw-space yaw correction in `Tracker.kt:300`, not PR #1805's `TrackerResetOverride` (which replaces the whole reset chain and is cleared inconsistently) | `notes/pr-1805-analysis.md` §3/§7. |
 | D23 | 2026-08-26 | TotalCapture: primary use is offline method development/evaluation. Fine-tuning a model on it and releasing weights openly (non-commercial) is a realistic future use; the access request asks the licensor explicitly whether that is within the terms. If they say no, restrict to evaluation only and fine-tune on community-donated/synthetic data. **Pending licensor's answer.** (Revised 2026-08-26; was "never train anything shipped".) | Licence text (research-only, no commercial use, no redistribution) does not address derived model weights; David's view is that open non-commercial fine-tuning is a legitimate research use, so ask rather than pre-emptively forbid. Signature requirement: David has no institution → may be refused. |
+| D24 | 2026-08-26 | Drift model refined: per-tracker yaw error ≈ k_i × yaw rotation travelled (k ≈ ±0.45 %), ~zero at rest; thermal tilt up to ~5° is a separate pitch/roll error | drift-lab/FINDINGS.md turntable + run A. Supersedes the bias assumption in D14's random-walk picture; VIP-style piecewise-constant correction still applies. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
 
 ## Open questions (blocking or shaping)
@@ -45,17 +46,15 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Next actions
 
-1. **David: request TotalCapture access** (https://cvssp.org/data/totalcapture/ — research licence needs an organisation signature; ask as independent open-source researcher). Email drafted 2026-08-26 (`notes/totalcapture-access-request.md`); asks explicitly about fine-tuning + open weight release (see D23). Fallbacks if refused: own recordings with Quest 3/controllers as optical reference; synthetic two-view from AMASS. Also identify camera model (Q6b).
-2. **Experiment 02 — bias, not noise:** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
-2b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
-3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
-4. Literature pass 2: **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
+1. **Experiment 02 — bias, not noise:** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
+1a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on rotation travelled, (iii) online per-tracker scale-error estimation from successive corrections — measure how much it cuts between-window error.
+1b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
+2. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
+3. Literature pass 2: **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
 
 ## Log
 
-- 2026-08-26 — TotalCapture access email drafted; D23 revised: fine-tuning/open weights asked of licensor rather than forbidden.
-
-- 2026-08-26 — drift-lab run A read: BNO085 static yaw drift 0.2–4.4 °/min per unit (`notes/drift-lab-numbers.md`); synthetic IMU bias default raised to ±3 °/min. Detector bias needs video — drift-lab can't provide it.
+- 2026-08-26 — drift-lab FINDINGS read (after a wrong first read caused by the t₀ placeholder pitfall): static drift < 1 °/h; drift is gyro **scale factor** +0.43 % / −0.23 %, opposite signs per unit; thermal tilt 0.8–5.7°. Synthetic IMU defaults now match. New idea: learn per-tracker scale error from successive camera corrections (`notes/drift-lab-numbers.md`).
 - 2026-08-26 — Experiment 01 done: harness works; noise is not the threat, bias and correction frequency are. Key formulation: compare the *same physical axis* on camera and IMU sides (drift rotates every axis' floor projection equally). David suggested game-engine/generative synthetic data → agenda §H.
 - 2026-08-26 — PR #1805 deep-read: monocular 2D projected-direction residual, walk-in-circle for limbs, torso IMU-only; several math bugs; borrow <10% (pinhole classes, LM+numerical Jacobian, recorder, SimCC decoder). Integration slot decided (D22).
 - 2026-08-26 — Q&A round 3: per-bone target (D19), PR #1805 reference-only (D20), specific camera OK (D21).
