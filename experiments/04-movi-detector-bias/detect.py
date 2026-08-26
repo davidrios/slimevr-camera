@@ -12,12 +12,14 @@ from pathlib import Path
 
 import cv2, numpy as np
 
+from slimevr_camera import enable_cuda
 from slimevr_camera.data.movi import ROOT
 
 OUT = ROOT / "keypoints"
 
 
 def run(video: Path, out: Path, model: str, device: str, max_frames: int | None, mode: str):
+    enable_cuda()
     from rtmlib import Body, Wholebody
     cls = Body if model == "body" else Wholebody
     det = cls(mode=mode, backend="onnxruntime", device=device)
