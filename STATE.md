@@ -42,13 +42,14 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Open questions (blocking or shaping)
 
-- **Q17 Measure σ_m** (yaw random-walk per √° of gross motion): proposed drift-lab run E — rigid bar strapped to a limb, modest movement 10–15 min @100 Hz, differential analysis (relative drift is observable on a moving rig; only common mode is not). This number sets the required correction cadence. David: feasible?
+- **Q17 Measure σ_m** — protocol agreed in principle: `experiments/03-onbody-drift/PROTOCOL.md` (worn set, reset in a jigged known pose, move, return + hold, repeat; DriftLogger raw @100 Hz, not BVH). Waiting on David to run it.
 - Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
 - Q6b Exact RTSP camera model/resolution/fps. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
 - Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
 
 ## Next actions
 
+0. **David runs experiment 03** (on-body drift protocol); Claude writes `experiments/03-onbody-drift/analyze.py` beforehand (hold detection, per-tracker yaw error, gross motion, σ_m fit).
 1. **Experiment 02 — bias, not noise:** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
 1a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
 1b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
@@ -57,6 +58,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Log
 
+- 2026-08-26 — Exp 03 protocol written (David's known-pose return procedure; BVH rejected as post-correction, DriftLogger instead; jig for pose repeatability).
 - 2026-08-26 — Exp 02 revised after David's objection: 'net turning' conclusion retracted; motion-driven random walk added to IMU model; σ_m measurement (drift-lab run E) proposed. D25 rewritten.
 - 2026-08-26 — Exp 02 done (`experiments/02-scale-learning/`): k learnable, gain modest, cadence is driven by net turning (D25, Q16). Also found the IMU-model bias edit had silently failed earlier — now truly aligned.
 - 2026-08-26 — drift-lab FINDINGS read (after a wrong first read caused by the t₀ placeholder pitfall): static drift < 1 °/h; drift is gyro **scale factor** +0.43 % / −0.23 %, opposite signs per unit; thermal tilt 0.8–5.7°. Synthetic IMU defaults now match. New idea: learn per-tracker scale error from successive camera corrections (`notes/drift-lab-numbers.md`).
