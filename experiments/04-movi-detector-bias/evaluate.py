@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
-"""Heading bias of a real 2D detector on MoVi, per bone.
+"""Heading error of a real 2D detector on MoVi, per bone — v2.
 
-For each video frame with cached keypoints in both views: undistort,
-triangulate (DLT) the COCO joints, derive each tracker's observable axis
-(slimevr_camera.heading.estimate_all, in a Y-up frame), and compare its floor
-heading with the SAME axis taken from the Visual3D ground-truth segment
-frame.  Reports mean (bias) / std (noise) per bone, still vs moving, and
-bias vs the body's yaw relative to the cameras.
+Reference = the verified Visual3D segment frame (world rotation via FK), i.e.
+exactly what a perfectly-mounted IMU on that segment would report.  For each
+tracker we compare the floor heading of the camera-observed axis (from
+`slimevr_camera.heading`) with the floor heading of the corresponding
+*fixed local axis* of the segment frame (SEG_LOCAL_AXIS, identified
+empirically from marker joint centres).
 
-Usage: uv run python experiments/04-movi-detector-bias/evaluate.py --subjects 1 2 3 4 5 [--model body-balanced]
+Three numbers per bone:
+  raw     — error vs the segment axis as-is (includes a constant per-user
+            offset between the observed feature and the segment's axis,
+            e.g. knee-flexion axis vs Visual3D thigh X).
+  reset   — error after subtracting the per-subject median (what a full
+            reset absorbs).  This is the quantity that matters for us.
+  window  — 'reset' error averaged over still windows of >= 1 s, i.e. what
+            one correction would be based on.
+
+Usage: uv run python experiments/04-movi-detector-bias/evaluate.py --subjects 1 2 3 4 5 --model body-balanced
 """
 from __future__ import annotations
 
@@ -23,39 +32,39 @@ from slimevr_camera.geometry import triangulate
 from slimevr_camera.heading import estimate_all
 from slimevr_camera.skeleton import KEYPOINTS, wrap
 
-COCO = ["nose", "eyeL", "eyeR", "earL", "earR", "shoulderL", "shoulderR", "elbowL", "elbowR", "wristL", "wristR", "hipL", "hipR", "kneeL", "kneeR", "ankleL", "ankleR"]
-# our keypoint order -> COCO index (toes absent in body-17 -> NaN)
-OUR2COCO = {k: (COCO.index(k) if k in COCO else COCO.index("nose") if k == "head" else None) for k in KEYPOINTS}
+COCO17 = ["nose", "eyeL", "eyeR", "earL", "earR", "shoulderL", "shoulderR", "elbowL", "elbowR", "wristL", "wristR", "hipL", "hipR", "kneeL", "kneeR", "ankleL", "ankleR"]
+# COCO-WholeBody: 17 body + feet at 17..22 (L big toe, L small toe, L heel, R big toe, R small toe, R heel)
+WB_TOE = {"toeL": 17, "toeR": 20}
 
-# MoVi world is Z-up (mm). Our heading code assumes Y-up. Map (x,y,z)_movi -> (x, z, -y)_ours
+
+def our2model(K):
+    m = {k: (COCO17.index(k) if k in COCO17 else COCO17.index("nose") if k == "head" else None) for k in KEYPOINTS}
+    if K >= 23:
+        m.update(WB_TOE)
+    return m
+
+
+# MoVi world is Z-up (mm); our heading code is Y-up.  (x,y,z) -> (x, z, -y)
 Z2Y = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]], float)
 
+# Fixed local axis of each Visual3D segment that our estimator observes
+# (identified 2026-08-26 from marker joint centres, subject 1).
+SEG_LOCAL_AXIS = {   # fitted on subjects 1-3 from marker joint centres (see README)
+    "hip": [1, 0, 0], "chest": [1, 0, 0],
+    "thighL": [-1, 0.04, 0.01], "thighR": [-1, 0.04, 0], "shinL": [-1, 0.02, 0], "shinR": [-1, 0.10, 0],
+    "footL": [0.11, 0.03, -0.99], "footR": [-0.11, 0.04, -0.99],
+    # upper arms excluded: Visual3D's upper-arm frame has no stable twist (elbow-plane normal sd 0.6 in local coords)
+}
 SEG_CODE = {v: k for k, v in SEGMENTS.items() if v}
 
 
 def undistort(uv, cam):
     k = np.array([cam.dist[0], cam.dist[1], 0, 0], float)
-    pts = uv.reshape(-1, 1, 2).astype(np.float64)
-    out = cv2.undistortPoints(pts, cam.K, k, P=cam.K)
-    return out.reshape(uv.shape)
+    return cv2.undistortPoints(uv.reshape(-1, 1, 2).astype(np.float64), cam.K, k, P=cam.K).reshape(uv.shape)
 
 
-def gt_joints_from_markers(s, mi):
-    """Marker-derived pseudo-keypoints in our KEYPOINTS order (mm, Z-up) for
-    checking the estimator itself, independent of any detector."""
-    M = {n: s.markers[mi, i] for i, n in enumerate(s.marker_names)}
-    def mid(*names): return np.mean([M[n] for n in names], 0)
-    try:   # Visual3D joint-centre virtual markers (*JC) = anatomical joint centres
-        J = {
-            "head": M["HEAD"],
-            "shoulderL": M["LSJC"], "shoulderR": M["RSJC"], "elbowL": M["LEJC"], "elbowR": M["REJC"],
-            "wristL": M["LWJC"], "wristR": M["RWJC"], "hipL": M["LHIP"], "hipR": M["RHIP"],   # *HJC are unfilled (zeros) in MoVi
-            "kneeL": M["LKJC"], "kneeR": M["RKJC"], "ankleL": M["LAJC"], "ankleR": M["RAJC"],
-            "toeL": M["LTOE"], "toeR": M["RTOE"],
-        }
-    except KeyError:
-        return None
-    return np.stack([J[k] for k in KEYPOINTS])
+def heading(v):
+    return np.arctan2(v[..., 0], v[..., 2])
 
 
 def main():
@@ -63,70 +72,71 @@ def main():
     ap.add_argument("--subjects", type=int, nargs="+", default=[1])
     ap.add_argument("--model", default="body-balanced")
     ap.add_argument("--round", default="F")
-    ap.add_argument("--still-deg-s", type=float, default=15.0, help="GT segment angular speed threshold for 'still'")
+    ap.add_argument("--keypoint-dir", type=Path, default=ROOT / "keypoints")
+    ap.add_argument("--min-score", type=float, default=0.3)
+    ap.add_argument("--still-deg-s", type=float, default=15.0)
     ap.add_argument("--out", type=Path, default=Path(__file__).parent / "results")
     a = ap.parse_args(); a.out.mkdir(exist_ok=True)
     cams = {c: load_camera(c) for c in ("PG1", "PG2")}
     rows = []
     for subj in a.subjects:
         s = load_subject(subj, a.round)
-        kp = {c: np.load(ROOT / "keypoints" / f"{a.round}_{c}_Subject_{subj}_{a.model}.npz") for c in cams}
+        kp = {c: np.load(a.keypoint_dir / f"{a.round}_{c}_Subject_{subj}_{a.model}.npz") for c in cams}
+        K = kp["PG1"]["kp"].shape[1]; o2m = our2model(K)
         T = min(len(kp[c]["kp"]) for c in cams)
-        # GT angular speed per segment (deg/s at 120 Hz) for the still/moving split
         for f in range(T):
             mi = s.mocap_index_for_video_frame(f)
             if mi is None or mi + 4 >= len(s.affine): continue
-            seg = s.segment_frames(mi)
-            if "hip" not in seg: continue
-            # --- detector path: undistort, triangulate ---
+            W1, W2 = s.world_affine(mi), s.world_affine(mi + 4)
+            if "hip" not in W1: continue
             uvs, valid = [], []
             for c, cam in cams.items():
                 u = kp[c]["kp"][f]; sc = kp[c]["score"][f]
-                uv_our = np.full((len(KEYPOINTS), 2), np.nan); ok = np.zeros(len(KEYPOINTS), bool)
+                uv = np.full((len(KEYPOINTS), 2), np.nan); ok = np.zeros(len(KEYPOINTS), bool)
                 for i, k in enumerate(KEYPOINTS):
-                    j = OUR2COCO[k]
-                    if j is not None and sc[j] > 0.3:
-                        uv_our[i] = u[j]; ok[i] = True
-                uv_our[ok] = undistort(uv_our[ok], cam)
-                uvs.append(uv_our); valid.append(ok)
+                    j = o2m[k]
+                    if j is not None and sc[j] > a.min_score:
+                        uv[i] = u[j]; ok[i] = True
+                if ok.any(): uv[ok] = undistort(uv[ok], cam)
+                uvs.append(uv); valid.append(ok)
             X, ok3 = triangulate(list(cams.values()), np.stack(uvs), np.stack(valid))
-            X = np.where(ok3[:, None], X, np.nan) @ Z2Y.T                      # -> Y-up, mm
-            est = estimate_all(X[None])                                       # (1,3) axes
-            # --- marker path (estimator sanity, no detector) ---
-            Jm = gt_joints_from_markers(s, mi)
-            estm = estimate_all((Jm @ Z2Y.T)[None]) if Jm is not None and not np.any(Jm < -1e8) else None
+            X = np.where(ok3[:, None], X, np.nan) @ Z2Y.T
+            est = estimate_all(X[None])
+            hip_yaw = np.rad2deg(heading(Z2Y @ W1["hip"][:3, :3] @ np.array([1.0, 0, 0])))
             motion = next((m for (x, y), m in zip(s.flags30, s.motions) if x <= f <= y), None)
-            for name, A in seg.items():
-                if name not in est: continue
-                ax_d, loc, q_d = est[name]
-                Rgt = Rot.from_matrix(Z2Y @ A[:3, :3])                          # segment frame in Y-up world
-                # GT version of the same *physical* axis: take the estimator's
-                # axis from marker joints as the reference (this is the axis
-                # definition; the detector must reproduce it)
-                if estm is None or name not in estm: continue
-                ax_m, _, q_m = estm[name]
-                h = lambda v: np.arctan2(v[..., 0], v[..., 2])
-                if np.isnan(ax_d[0]).any() or np.isnan(ax_m[0]).any() or q_m[0] < 0.3: continue
-                # body yaw relative to camera baseline: hip lateral axis heading (marker-based)
-                hip_ax = estm["hip"][0][0]
-                A1 = s.world_affine(mi).get(name); A2 = s.world_affine(mi + 4).get(name)
-                if A1 is None or A2 is None: continue
-                if np.any(A2[:3, 3] <= -1e8): continue
-                dR = Rot.from_matrix(A2[:3, :3] @ A1[:3, :3].T); speed = np.rad2deg(np.linalg.norm(dR.as_rotvec())) * 30   # deg/s (4 mocap frames = 1/30 s)
-                rows.append(dict(subject=subj, frame=f, motion=motion, bone=name,
-                                 err_deg=float(np.rad2deg(wrap(h(ax_d[0]) - h(ax_m[0])))),
-                                 q_det=float(q_d[0]), q_mk=float(q_m[0]), body_yaw=float(np.rad2deg(h(hip_ax))),
-                                 speed=float(speed), still=bool(speed < a.still_deg_s)))
+            for name, ax_local in SEG_LOCAL_AXIS.items():
+                if name not in est or name not in W1 or name not in W2: continue
+                ax_d, _, q = est[name]
+                if np.isnan(ax_d[0]).any() or q[0] < 0.3: continue
+                Rw = Z2Y @ W1[name][:3, :3]
+                ref = Rw @ (np.asarray(ax_local, float) / np.linalg.norm(ax_local))
+                dR = Rot.from_matrix(W2[name][:3, :3] @ W1[name][:3, :3].T)
+                speed = np.rad2deg(np.linalg.norm(dR.as_rotvec())) * 30
+                rows.append(dict(subject=subj, frame=f, motion=motion, bone=name, err=float(np.rad2deg(wrap(heading(ax_d[0]) - heading(ref)))),
+                                 quality=float(q[0]), body_yaw=float(hip_yaw), speed=float(speed), still=bool(speed < a.still_deg_s)))
     df = pd.DataFrame(rows)
-    df.to_csv(a.out / f"errors_{a.model}.csv", index=False)
-    pd.set_option("display.width", 200)
-    print(f"{len(df)} bone-frames from subjects {a.subjects}, model {a.model}\n")
-    g = df.groupby(["bone", "still"]).err_deg.agg(n="size", bias="mean", noise="std", mae=lambda x: x.abs().mean(), p95=lambda x: x.abs().quantile(.95)).round(2)
-    print("heading error vs marker-derived reference, per bone (still = GT segment speed < %.0f deg/s):" % a.still_deg_s); print(g.to_string())
-    # bias vs body yaw bins (still frames only)
-    st = df[df.still].dropna(subset=["body_yaw"]).copy(); st["yaw_bin"] = (st.body_yaw // 45 * 45).astype(int)
-    print("\nbias (mean err) by body yaw bin, still frames:"); print(st.pivot_table(index="bone", columns="yaw_bin", values="err_deg", aggfunc="mean").round(1).to_string())
-    print("\nper-motion MAE (all bones):"); print(df.groupby("motion").err_deg.apply(lambda x: x.abs().mean()).round(2).sort_values().to_string())
+    # reset-referenced error: subtract per-subject, per-bone median (constant offset a full reset absorbs)
+    df["err_reset"] = df.err - df.groupby(["subject", "bone"]).err.transform("median")
+    # still windows: runs of consecutive still frames per (subject, bone), >= 30 frames; error of the window-mean axis ~ mean of errors
+    df = df.sort_values(["subject", "bone", "frame"])
+    df["run"] = ((~df.still) | (df.frame.diff() != 1) | (df.bone != df.bone.shift()) | (df.subject != df.subject.shift())).cumsum()
+    win = df[df.still].groupby(["subject", "bone", "run"]).agg(n=("err_reset", "size"), err_win=("err_reset", "mean"), yaw=("body_yaw", "mean"), motion=("motion", "first")).reset_index()
+    win = win[win.n >= 30]
+    df.to_csv(a.out / f"errors_{a.model}.csv", index=False); win.to_csv(a.out / f"windows_{a.model}.csv", index=False)
+    pd.set_option("display.width", 220)
+    print(f"model={a.model} subjects={a.subjects}: {len(df)} bone-frames, {len(win)} still windows (>=1 s)\n")
+    def stats(x): return pd.Series(dict(n=len(x), bias=x.mean(), sd=x.std(), mae=x.abs().mean(), p95=x.abs().quantile(.95)))
+    print("RAW error vs segment axis (per frame):"); print(df.groupby("bone").err.apply(stats).unstack().round(2).to_string())
+    print("\nRESET-referenced error, per frame, still vs moving:"); print(df.groupby(["bone", "still"]).err_reset.apply(stats).unstack().round(2).to_string())
+    # stillness-independent: 1 s rolling mean of the reset-referenced error over consecutive frames
+    roll = df.set_index(["subject", "bone", "frame"]).err_reset.groupby(level=["subject", "bone"]).transform(lambda x: x.rolling(30, min_periods=25).mean()).dropna()
+    print("\n1-second ROLLING-MEAN reset-referenced error (all frames, moving included) — noise left after averaging 30 frames:")
+    print(roll.groupby(level="bone").apply(stats).unstack().round(2).to_string())
+    print("\nWINDOW-level reset-referenced error (mean over still windows >= 1 s) — the number that matters:")
+    print(win.groupby("bone").err_win.apply(stats).unstack().round(2).to_string())
+    wb = win.copy(); wb["yaw_bin"] = (wb.yaw // 45 * 45).astype(int)
+    print("\nwindow error by body yaw bin (mean):"); print(wb.pivot_table(index="bone", columns="yaw_bin", values="err_win", aggfunc="mean").round(1).to_string())
+    print("\nwindow |error| by motion (mean over bones):"); print(win.groupby("motion").err_win.apply(lambda x: x.abs().mean()).round(2).sort_values().to_string())
 
 
 if __name__ == "__main__":

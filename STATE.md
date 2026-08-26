@@ -4,7 +4,7 @@ _Last updated: 2026-08-26 (session 1: scaffold, Q&A rounds 1–3, literature pas
 
 ## Status
 
-Phase 0 → 1. Framing done (Q1–Q15 answered, D1–D22). Literature pass 1 complete (§A–§D, §G; `docs/04-lit-synthesis.md`, 31 notes). Community search done (`notes/community-prior-work.md`). **Key find: SlimeVR-Server PR #1805 (jabberrock, Stay Aligned author) is a one-shot video-calibration proof of concept that already does camera→IMU yaw + mounting correction.** Fetched locally as branch `pr-1805` in `../SlimeVR-Server` (70 files, +8.5k lines, commit 487e2419, 2026-03-16). **Experiments 01–02 (synthetic, keypoint level) done.** Exp 02 (revised): drift is a motion-driven random walk of unmeasured magnitude σ_m; residual ∝ σ_m·√(gross motion since last correction); required cadence unknown until σ_m is measured (Q17). camera heading error inside still windows < 2° at 10 px noise for all 11 trackers; residual after correction 1–3° dominated by drift between windows. See `experiments/01-synthetic-heading/README.md`. Harness code in `src/slimevr_camera/`.
+Phase 0 → 1. Framing done (Q1–Q15 answered, D1–D22). Literature pass 1 complete (§A–§D, §G; `docs/04-lit-synthesis.md`, 31 notes). Community search done (`notes/community-prior-work.md`). **Key find: SlimeVR-Server PR #1805 (jabberrock, Stay Aligned author) is a one-shot video-calibration proof of concept that already does camera→IMU yaw + mounting correction.** Fetched locally as branch `pr-1805` in `../SlimeVR-Server` (70 files, +8.5k lines, commit 487e2419, 2026-03-16). **Exp 04 first result (MoVi, RTMPose-m, 3 subjects): real-detector heading error is pose-dependent, not white — 1-s averaging leaves 5–11° sd (chest 5, hip 7, shins 5–6, thighs 10–11); 5° budget NOT met by an off-the-shelf detector at 800×600/4.5 m. Fine-tuning (D28) is load-bearing.** Experiments 01–02 (synthetic) done. Exp 02 (revised): drift is a motion-driven random walk of unmeasured magnitude σ_m; residual ∝ σ_m·√(gross motion since last correction); required cadence unknown until σ_m is measured (Q17). camera heading error inside still windows < 2° at 10 px noise for all 11 trackers; residual after correction 1–3° dominated by drift between windows. See `experiments/01-synthetic-heading/README.md`. Harness code in `src/slimevr_camera/`.
 
 ## Working hypothesis (validated by VIP 2018 ablation; heading accuracy still unmeasured)
 
@@ -64,6 +64,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 ## Log
 
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
+- 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
 - 2026-08-26 — §G2 dataset verification: MoVi chosen to start exp 04 (D29); no headset datasets exist.
 - 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.

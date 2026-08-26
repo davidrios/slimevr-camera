@@ -1,6 +1,6 @@
 # 04 — Real 2D detector heading bias on MoVi (in progress)
 
-**Started:** 2026-08-26 · **Status:** data downloading, loader written
+**Started:** 2026-08-26 · **Status:** first results (RTMPose-m body, subjects 1–3); wholebody / larger models running
 
 ## Hypothesis
 
@@ -50,3 +50,50 @@ Target D19: ≤5° long bones, ≤8–10° feet/forearms.
   for 800×600 pilot volume.
 - Kinematic-tree "waist" has no GT segment in MoVi (pelvis→thorax only);
   evaluate hip + chest and note waist as interpolated.
+
+## Interim results (2026-08-26, RTMPose-m "body-balanced", subjects 1–3, 40k bone-frames)
+
+Method: detector 2D → undistort → DLT triangulation → per-tracker axis
+(`heading.estimate_all`) → floor heading vs the **same fixed local axis of the
+verified Visual3D segment frame** (`SEG_LOCAL_AXIS`, fitted from marker joint
+centres). "Reset-referenced" = per-subject median subtracted (what a full
+reset absorbs). Upper arms excluded: Visual3D's upper-arm frame has no stable
+twist, so no ground truth for that axis.
+
+| bone | per-frame sd (still) | **1-s rolling-mean sd** | 1-s p95 | reset-ref. bias |
+|---|---|---|---|---|
+| chest | 6.4° | **5.1°** | 10.7° | 0.8° |
+| hip | 8.3° | **7.2°** | 14.8° | 0.6° |
+| shin L / R | 7.8 / 7.5° | **6.1 / 5.3°** | 11.8 / 10.6° | 0.4° |
+| thigh L / R | 14 / 18° | **11.4 / 10.3°** | 29 / 22° | ±2° |
+
+Cross-checks: detector-triangulated knees/ankles/elbows are within 25–35 mm
+of marker joint centres (calibration, sync, undistortion are right);
+per-subject constant offsets are small (< 5°) except thighs.
+
+### Finding: the error is not white noise
+
+Averaging 30 frames barely reduces it (per-frame sd 6–14° → 1-s mean sd
+5–11°). The detector's heading error is **slowly varying and pose-dependent**
+(e.g. thigh −30° in `cross_legged_sitting`, hip +9° in a frontal-facing
+window). Experiment 01's assumption — window averaging removes the noise —
+holds for pixel jitter, **not** for a real detector. With this detector at
+800×600 / 4.5 m, **the 5° budget is not met** for hips/thighs; chest and
+shins are borderline.
+
+Not yet controlled: still windows are rare in MoVi (few subjects stand
+still), so window stats have n=2–18; only 3 subjects; low resolution.
+Pending: wholebody-performance and body-performance (RTMPose-x) runs, all 5
+subjects, 5-s windows, per-yaw-bin bias with more data.
+
+### What this implies for the project (tentative)
+
+- Fine-tuning the detector for our regime (D28) is not optional polish —
+  it is the difference between meeting the budget or not. Pose-dependent
+  heading bias is exactly what a heading-aware loss on our own data would
+  target.
+- The correction should use a *longer* observation than one still window
+  where possible, and weight bones by their measured reliability (chest/shin
+  > hip > thigh).
+- Two views at 800×600 from 4.5 m is a pessimistic setup; resolution and
+  baseline are cheap to improve.
