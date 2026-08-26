@@ -101,6 +101,15 @@ covers the face, so it is largely anonymized already. Plan two tiers:
 raw video (opt-in) and derived-only (keypoints/poses). Raw video is far more
 valuable for fine-tuning.
 
+## Principle: the IMU is a black box (D26/D27)
+
+Tracker sets in the field vary without bound (sensors, builds, straps,
+firmware). We do not model their drift offline. The camera is the only ground
+truth; each unit's drift statistics are learned at runtime from the
+corrections the camera applies to it, and used only to decide *when* the
+next correction is needed. Research investment goes to making the camera
+side robust in diverse real conditions, which is where AI training pays off.
+
 ## Validation plan
 
 - **Benchmark first (D18):** TotalCapture — raw Xsens IMU + 8 static cameras

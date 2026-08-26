@@ -38,6 +38,8 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 | D23 | 2026-08-26 | TotalCapture: primary use is offline method development/evaluation. Fine-tuning a model on it and releasing weights openly (non-commercial) is a realistic future use; the access request asks the licensor explicitly whether that is within the terms. If they say no, restrict to evaluation only and fine-tune on community-donated/synthetic data. **Pending licensor's answer.** (Revised 2026-08-26; was "never train anything shipped".) | Licence text (research-only, no commercial use, no redistribution) does not address derived model weights; David's view is that open non-commercial fine-tuning is a legitimate research use, so ask rather than pre-emptively forbid. Signature requirement: David has no institution → may be refused. |
 | D24 | 2026-08-26 | Drift model refined: per-tracker yaw error ≈ k_i × yaw rotation travelled (k ≈ ±0.45 %), ~zero at rest; thermal tilt up to ~5° is a separate pitch/roll error | drift-lab/FINDINGS.md turntable + run A. Supersedes the bias assumption in D14's random-walk picture; VIP-style piecewise-constant correction still applies. |
 | D25 | 2026-08-26 (rev.) | Drift model = unpredictable random walk driven by *gross* 3D motion (σ_m, unmeasured) + minor yaw-scale term. Correction trigger = demand-driven on gross motion since last correction. Scale-learning dropped (fits noise). | David: drift appears with modest movement, no turning; predictable error would be calibrated away. Exp 02 revision: residual ∝ σ_m·√(gross motion); cadence requirement hinges on σ_m. |
+| D26 | 2026-08-26 | **No offline drift model.** Tracker error is treated as unknown per unit (unbounded variety of sensors/builds). The camera is the only ground truth; per-unit drift statistics are estimated *at runtime* from the camera's own corrections and used only to schedule the next correction. Exp 03 becomes optional (harness calibration for David's units). | David: variability across tracker sets makes extrapolation from a few datapoints impossible. |
+| D27 | 2026-08-26 | **Research effort goes to the camera side:** pose-estimation robustness in diverse real conditions (rooms, lighting, cheap RTSP cameras, headset+controllers, clothing, occlusion). AI training is expected to pay off there, not in IMU modelling. IMU-side experiments stop after exp 02. | David. Self-supervised signal: IMU is trustworthy for a while after a reset → pseudo-labels for limb heading in the wild. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
 
 ## Open questions (blocking or shaping)
@@ -49,15 +51,17 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Next actions
 
-0. **David runs experiment 03** (`experiments/03-onbody-drift/PROTOCOL.md`). `analyze.py` is ready (auto hold detection or `--holds`, per-tracker yaw error vs reset pose, increments, gross motion, tilt, σ_m fit); validated on drift-lab runX (reproduces the turntable increments).
-1. **Experiment 02 — bias, not noise:** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
-1a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
-1b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
-2. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
-3. Literature pass 2: **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
+0. (optional) David runs experiment 03 to calibrate the harness for his units; `analyze.py` ready.
+1. **Runtime drift-statistics scheduler (design, small):** per tracker, from successive camera corrections and the gross motion between them, estimate its own σ̂_m online (robust, conservative prior) and trigger the next correction when predicted error exceeds budget. No offline model. Add to harness; evaluate against unknown/varying σ_m per tracker.
+2. **Experiment 04 — real detector, diverse conditions (the main line now):** run a real 2D detector (RTMPose via rtmlib, MIT) on two-view footage (BEDLAM-style render, or any public multi-view video with 3D GT) to measure *systematic* keypoint offsets and their effect on lateral-axis headings; add extrinsic-error sweep (0.5–2°) and occlusion to the synthetic harness.
+2a. **Harness:** add (i) thermal-tilt error on the IMU side, (ii) demand-driven gate on accumulated net yaw (exp 02 result), (iii) extrinsic error 0.5–2°, (iv) persist k̂ across sessions in the sim (multi-session run).
+2b. TotalCapture adapter once access is granted (same pipeline, real IMU + Vicon truth).
+3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
+4. Literature pass 2 (now higher priority): **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
 
 ## Log
 
+- 2026-08-26 — David: no offline drift model (D26); effort goes to camera-side robustness + AI training (D27). Exp 03 demoted to optional. No rigid bar exists (protocol fixed).
 - 2026-08-26 — Exp 03 protocol written (David's known-pose return procedure; BVH rejected as post-correction, DriftLogger instead; jig for pose repeatability).
 - 2026-08-26 — Exp 02 revised after David's objection: 'net turning' conclusion retracted; motion-driven random walk added to IMU model; σ_m measurement (drift-lab run E) proposed. D25 rewritten.
 - 2026-08-26 — Exp 02 done (`experiments/02-scale-learning/`): k learnable, gain modest, cadence is driven by net turning (D25, Q16). Also found the IMU-model bias edit had silently failed earlier — now truly aligned.

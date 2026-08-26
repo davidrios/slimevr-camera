@@ -1,4 +1,8 @@
-# 03 — On-body drift vs gross motion (protocol, David's proposal 2026-08-26)
+# 03 — On-body drift vs gross motion (protocol, David's proposal 2026-08-26) — OPTIONAL, see D26
+
+**Status:** optional. Per D26 the system must not depend on any offline
+drift model; this run only calibrates the *harness* for David's own units and
+bounds the cadence for one hardware set.
 
 **Goal:** measure σ_m — how much unpredictable yaw error each tracker
 accumulates per unit of gross motion — on the real body, with real straps,
@@ -48,9 +52,9 @@ anyway), DriftLogger on at 100 Hz. Note wall-clock of every event.
 5. Repeat 3–4. Optionally one long final interval (15–20 min).
 6. Reset at the end if you want to keep playing; it is irrelevant to the data.
 
-Also strap the rigid bar (2 spare trackers) to one thigh during the session:
-the bar's relative drift is jig-free ground truth for that limb and
-cross-checks the jig repeatability.
+(No rigid bar exists — drift-lab used a table. If two spare trackers can be
+taped rigidly to one object on a limb, their relative drift is jig-free
+truth for that limb; optional.)
 
 ## Analysis (to write: `analyze.py` in this folder)
 
