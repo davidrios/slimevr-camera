@@ -13,6 +13,7 @@ dependencies = [
     "opencv-python-headless>=5.0.0.93",
     "pandas>=3.0.5",
     "pypdf>=6.16.2",
+    "pyserial>=3.5",
     "rtmlib>=0.0.16",
     "scipy>=1.18.1",
 ]
