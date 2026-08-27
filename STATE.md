@@ -58,7 +58,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 ## Next actions
 
-1. **David — hardware for the own-room recorder:** flash `firmware/beacon/beacon.ino` on any Arduino/ESP32 with a visible LED (+ optional 850 nm IR), plug into the recording PC; mount the 2 RTSP cameras (~2–3 m high, ±30–45° in front); rebuild the server from the `drift-logger` branch (commit 8fe456e1 adds HMD/controller positions). Then a first session per `docs/06-recorder-beacon.md` §protocol.
+1. **David — hardware for the own-room recorder:** flash `firmware/beacon/beacon.ino` on a spare Wemos D1 mini (LED on D1/GPIO5 + resistor; see `firmware/beacon/README.md`), plug into the recording PC; mount the 2 RTSP cameras (~2–3 m high, ±30–45° in front); rebuild the server from the `drift-logger` branch (commit 8fe456e1 adds HMD/controller positions). Then a first session per `docs/06-recorder-beacon.md` §protocol.
 2. **Claude — session tooling:** `events` marking tool (reset / pose labels with wall time); run-folder assembler (`data/runs/<stamp>_<label>/`); loader for own recordings mirroring `data/movi.py` (frame→wall via beacon, DriftLogger, BVH, HMD).
 3. **Automatic full reset in familiar poses (D33) — the build target:** familiar-pose detector (templates learned while trusted: standing reset + seated idle); in-pose measurement of pelvis/chest/feet headings and bone directions (3-DoF, D31); per-pose bias learned in the trusted window (D32); application through the full-reset path; confidence → prompt. Evaluate first on MoVi still stances, then on own recordings.
 4. **HMD gap, cheap first (§H):** off-the-shelf detectors on own headset footage; label ~200 frames; test headset copy-paste augmentation on COCO before any rendering.

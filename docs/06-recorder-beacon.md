@@ -71,6 +71,6 @@ detector; the beacon gives frame-accurate alignment throughout.
 
 ## Hardware shopping list
 
-- Any Arduino/ESP32 dev board with USB (already have ESP32s from trackers).
+- Wemos D1 mini (David has spares) — see `firmware/beacon/README.md` for wiring (LED on D1/GPIO5).
 - 1× visible LED (+ optional 850 nm IR LED), 2 resistors, small diffuser.
 - 2 RTSP cameras (have), mounted ~2–3 m high at ±30–45° in front.
