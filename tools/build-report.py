@@ -135,7 +135,7 @@ html = f'''<title>SlimeVR Camera Correction</title>
 <h2>6 · Open threads</h2>
 <ul>
 <li>TotalCapture access (requested); Fit3D as backup.</li>
-<li>Synthetic-pipeline synthesis (Blender + SMPL-X add-on + XRFeitoria, own headset meshes) and BEDLAM licence terms — agent pending.</li>
+<li><b>Synthetic data (§H), now synthesised:</b> Blender + MPI SMPL-X add-on + XRFeitoria on Linux is the open route, with our own headset/controller meshes; every body and motion asset (AMASS, SMPL-X, BEDLAM) is non-commercial and that propagates to trained weights — a licence decision is needed before building. The domain-gap literature is consistent: synthetic supplements real labels, never replaces them, and pays off on a specific gap. Nobody has measured a 2D detector on a headset wearer from a third-person camera, so the first step is a ~200-frame real labelled VR test set and a cheap headset copy-paste augmentation test.</li>
 <li>Optional experiment 03 (on-body drift with known-pose returns); RTSP camera model.</li>
 </ul>
 

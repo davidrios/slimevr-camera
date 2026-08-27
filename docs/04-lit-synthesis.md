@@ -298,3 +298,6 @@ exactly our gap, and it may be solvable far more cheaply than by rendering.**
    from all three sources with real data mixed in per batch.
 3. Licence gate first (Q19); if commercial use is possible, avoid SMPL-X /
    AMASS at render time.
+4. Effort (agent estimate): Blender SMPL-X + HMD + camera script ~1–2 weeks;
+   first RTMPose fine-tune ~1 week; real labelled VR test set (~200 frames)
+   2–3 days — do the test set first.
