@@ -238,3 +238,63 @@ come from **synthetic** data (§H) and our own recordings.
 **Decision:** start experiment 04 on **MoVi** now (2 calibrated views, marker
 truth, 90 subjects, IMUs as a bonus); move to TotalCapture/Fit3D when
 access arrives for higher resolution and more views.
+
+## §H Synthetic data: motion → body → render  (2026-08-27 — 5 notes)
+
+Notes: `2023-black-bedlam`, `2019-mahmood-amass-and-smplx-licences`,
+`generative-motion-models`, `synthetic-to-real-domain-gap`,
+`synthetic-human-data-generators`.
+
+**Headline: the pipeline is available and open on Linux, but every body /
+motion asset in it is non-commercial, and the evidence says synthetic data is
+a *supplement* for a 2D detector, never a replacement for real labels. The
+one thing nobody has — a VR headset rendered from external cameras — is
+exactly our gap, and it may be solvable far more cheaply than by rendering.**
+
+- **BEDLAM (CVPR 2023, 2.0 NeurIPS 2025)** — AMASS motions on SMPL-X bodies
+  with simulated clothing, Unreal renders, full GT. Synthetic-only training
+  matches real-only for SMPL regressors (3DPW PA-MPJPE 46.6 vs 46.4). Render
+  tools are Windows/Unreal; licence is MPI non-commercial for data, code
+  *and derived weights*; no 2D keypoint evaluation in either paper.
+- **Licences (AMASS, SMPL-X, `smplx`)** — all MPI non-commercial; weights
+  trained on them inherit it. Permissive motion exists at the source (CMU
+  mocap "free for all uses", ACCAD CC BY, DanceDB/HDM05 CC BY-SA) but the
+  AMASS SMPL-X fits re-wrap it in NC terms → a commercial-OK pipeline would
+  re-fit from C3D/BVH onto a non-SMPL rigged body. **Decision needed
+  (Q19): is any commercial use foreseen?** For a non-commercial open-source
+  SlimeVR release everything is usable as-is with NC-labelled weights.
+- **Generative motion** — HumanML3D-based models (MDM, MotionGPT, MoMask)
+  output joint positions needing an IK fit (twist ambiguity); EDGE and
+  AIST++ give SMPL rotations directly (dance). All weights are NC in practice
+  via their training data. Text prompts can't express VR play; **David's own
+  SlimeVR + headset recordings retargeted to SMPL-X are the highest-value,
+  licence-free motion source** for VR-specific movement.
+- **Toolchain** — Blender on Linux: MPI SMPL-X add-on (AMASS npz → animated
+  body) + XRFeitoria (Apache-2.0; multi-camera, joint export) + BlenderProc /
+  Poly Haven HDRIs (CC0) for randomisation; parent our own CC0 HMD +
+  controller meshes to head/wrist bones. Skip Unreal.
+- **Domain gap for 2D detectors** — consistent pattern across SURREAL,
+  PeopleSansPeople, RePoGen, Trampoline: synthetic-only < real-only <
+  synthetic-pretrain + real fine-tune. Gains come from covering a *specific*
+  gap (RePoGen: unusual viewpoints, ViTPose-H 69 → 81 AP) and saturate after
+  a few thousand images; more synthetic can hurt. SynthPose shows projected
+  BEDLAM labels fine-tune ViTPose without collapse if real COCO is mixed in
+  per batch and a small real set fixes the label-convention mismatch. Recipe:
+  mix real, heavy photometric augmentation incl. JPEG/ISO noise (mimics RTSP),
+  diverse focals, label adaptation.
+- **HMD wearers** — no paper measures 2D keypoint accuracy on a person
+  wearing a VR headset from a third-person camera. EgoBody's authors had to
+  hand-fix detections. Before any rendering: run off-the-shelf detectors on
+  our own footage and label ~200 frames; then test whether a simple
+  **headset copy-paste augmentation on COCO images** already closes the gap
+  (far cheaper than rendering).
+
+**Design consequences**
+1. Synthetic rendering is the *third* data source, after (a) marker-GT
+   datasets (MoVi / TotalCapture / Fit3D) and (b) our own recordings with
+   IMU-after-reset pseudo-labels; it exists to cover headset/controllers,
+   arm-up dance poses, low/wide cheap cameras.
+2. Heading-aware fine-tuning (D32) should train on projected-joint labels
+   from all three sources with real data mixed in per batch.
+3. Licence gate first (Q19); if commercial use is possible, avoid SMPL-X /
+   AMASS at render time.
