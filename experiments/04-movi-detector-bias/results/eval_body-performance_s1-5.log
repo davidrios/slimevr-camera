@@ -1,0 +1,73 @@
+model=body-performance subjects=[1, 2, 3, 4, 5]: 47491 bone-frames, 68 still windows (>=1 s)
+
+RAW error vs segment axis (per frame):
+              n  bias     sd    mae    p95
+bone                                      
+chest   11574.0 -3.43   6.47   6.16  12.96
+hip     11911.0 -2.22   9.35   7.58  18.63
+shinL    5563.0  5.83  11.17   8.78  21.30
+shinR    6440.0 -5.25  14.40   9.92  25.88
+thighL   5563.0  1.32  16.29  12.07  37.59
+thighR   6440.0 -4.49  16.74  13.20  34.38
+
+RESET-referenced error, per frame, still vs moving:
+                   n   bias     sd    mae    p95
+bone   still                                    
+chest  False  8545.0   1.55   6.63   5.12  13.71
+       True   3029.0   0.20   5.83   4.35  12.41
+hip    False  8553.0  -0.40   9.80   7.76  19.10
+       True   3358.0   0.61   7.38   5.65  15.24
+shinL  False  5170.0  -0.32  11.01   6.63  17.20
+       True    393.0  -1.89  11.92   7.87  17.43
+shinR  False  5772.0   1.47  13.71   6.66  18.25
+       True    668.0   0.84   7.15   4.97  11.87
+thighL False  5304.0  -1.98  13.91   9.45  29.00
+       True    259.0 -28.38  20.46  30.89  54.99
+thighR False  5946.0   2.36  13.82   8.94  25.81
+       True    494.0  12.23  25.87  16.43  73.63
+
+1-second ROLLING-MEAN reset-referenced error (all frames, moving included) — noise left after averaging 30 frames:
+              n  bias     sd   mae    p95
+bone                                     
+chest   11454.0  1.21   5.06  3.92  10.87
+hip     11791.0 -0.12   7.00  5.26  14.53
+shinL    5443.0 -0.41   7.91  4.88  14.93
+shinR    6320.0  1.41   9.95  4.83  11.96
+thighL   5443.0 -3.31  13.20  8.28  35.28
+thighR   6320.0  3.21  13.49  7.33  25.76
+
+WINDOW-level reset-referenced error (mean over still windows >= 1 s) — the number that matters:
+           n   bias     sd    mae    p95
+bone                                    
+chest   22.0  -1.35   4.87   3.69  10.37
+hip     33.0   0.90   6.52   4.58  13.96
+shinL    2.0  -1.01   6.29   4.45   5.36
+shinR    5.0   0.77   7.33   5.28  10.35
+thighL   2.0 -36.01   0.80  36.01  36.52
+thighR   4.0   6.55  14.98  10.26  24.59
+
+window error by body yaw bin (mean):
+yaw_bin   -45    0 
+bone               
+chest    -1.6  -0.1
+hip       0.7   1.5
+shinL    -5.5   3.4
+shinR     3.5  -3.2
+thighL  -36.6 -35.4
+thighR    0.2  12.9
+
+window |error| by motion (mean over bones):
+motion
+hand_waving              0.94
+dancing_rm               1.67
+scratching_head          2.15
+hand_clapping            2.90
+vertical_jumping         3.00
+stretching               3.18
+crossarms                3.70
+phone_talking            3.71
+taking_photo             4.22
+pointing                 4.34
+checking_watch           7.05
+sitting_down             9.16
+cross_legged_sitting    13.44

@@ -76,6 +76,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-27 — Exp 04 complete on 5 subjects × 3 detectors (vulcanus): model size irrelevant, confirmed. Seated/idle motions: chest & feet inside budget as-is; hips need per-pose calibration; cross-legged is hardest.
 - 2026-08-27 — Seated relaxed idle added as primary target pose (UX: no more stand-up resets while seated).
 - 2026-08-26 — D33: scope = automatic full reset in familiar poses; user is a participant; heavy-activity drift handled by manual reset.
 - 2026-08-26 — David's notes: IMU-after-reset is the calibration source for the camera (D26 revised); correction must be 3-DoF not yaw-only (D31). Exp 05 planned.

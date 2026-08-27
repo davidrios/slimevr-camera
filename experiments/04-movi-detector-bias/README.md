@@ -119,3 +119,35 @@ when moving is included. Heel→toe is a long, nearly horizontal, well-seen
 axis. This reverses the synthetic-era assumption (D19) that feet would be the
 hard case: **feet and chest are the most reliable heading sources; thighs the
 least.**
+
+## Update 2026-08-27: all three detectors on 5 subjects (run on vulcanus)
+
+1-s rolling-mean sd (°), reset-referenced, 5 subjects:
+
+| bone | RTMPose-m body-balanced | RTMPose-x body-performance | RTMPose-x wholebody-performance |
+|---|---|---|---|
+| chest | 5.1 | 5.1 | 5.2 |
+| hip | 7.5 | 7.0 | 7.2 |
+| shin L / R | 8.0 / 9.6 | 7.9 / 10.0 | 8.3 / 10.1 |
+| thigh L / R | 12.5 / 12.9 | 13.2 / 13.5 | 12.5 / 12.9 |
+| foot L / R | — | — | 10.8 / 5.9 (moving incl.); still MAE ~1.7 |
+
+Confirms on the full pilot: **detector size is irrelevant to heading error**;
+the bias is structural. Foot L's larger moving-frame sd comes from
+occlusion/side view in some motions — feet are excellent when still.
+
+### Seated / idle-like motions (subjects 1–2, 1-s mean |error|, wholebody)
+
+| bone | sitting_down | cross_legged_sitting | phone_talking | checking_watch |
+|---|---|---|---|---|
+| chest | 1.9 | 3.4 | 4.5 | 3.6 |
+| feet L / R | 1.9 / 2.2 | 5.8 / 6.5 | 0.7 / 1.3 | 1.2 / 1.1 |
+| hip | 6.4 | 8.8 | 5.8 | 7.2 |
+| shin L / R | 3.4 / 2.0 | 5.5 / 5.5 | 5.4 / 3.3 | – / 4.9 |
+| thigh L / R | 10.1 / 4.6 | 16.6 / 11.6 | 3.5 / 6.6 | – / 5.3 |
+
+For the "automatic full reset in a familiar pose" scope (D33): chest and
+feet are inside budget in seated/idle poses without any calibration; hips
+need the per-pose bias learned in the trusted window (within-pose residual
+~2°, exp 05); cross-legged sitting hides the feet/knees and is the hardest
+seated pose.
