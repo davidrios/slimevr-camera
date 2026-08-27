@@ -63,7 +63,8 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 3. **Automatic full reset in familiar poses (D33) — the build target:** familiar-pose detector (templates learned while trusted: standing reset + seated idle); in-pose measurement of pelvis/chest/feet headings and bone directions (3-DoF, D31); per-pose bias learned in the trusted window (D32); application through the full-reset path; confidence → prompt. Evaluate first on MoVi still stances, then on own recordings.
 4. **HMD gap, cheap first (§H):** off-the-shelf detectors on own headset footage; label ~200 frames; test headset copy-paste augmentation on COCO before any rendering.
 5. **Runtime scheduler:** per-unit drift statistics from successive corrections; bone weighting per D30.
-6. Later: TotalCapture adapter (validation only, D34) if access is granted; exp 03 (optional); literature §F (CPU inference/quantisation) when a model is chosen; Blender render pipeline only if the cheap HMD test fails.
+6. **TotalCapture — access GRANTED 2026-08-27** (validation only, D34). Plan: pilot subset first (1 subject, 1–2 acts, 2 of the 8 cameras + IMU + Vicon) into `/mnt/data2/.../totalcapture`; adapter mirroring `data/movi.py`; exp 06 = end-to-end loop on real drifting IMUs (Xsens, mag-aided so drift is small → inject gyro-only drift on top as in D18) with camera correction in still stances. Credentials stay outside the repo.
+   Later: exp 03 (optional); literature §F (CPU inference/quantisation) when a model is chosen; Blender render pipeline only if the cheap HMD test fails.
 
 ## Reports
 
@@ -74,6 +75,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-27 — TotalCapture access granted (validation-only per D34).
 - 2026-08-27 — Recorder + beacon implemented (host-driven serial LED, Manchester counter code, ffmpeg copy capture, correlation+fit decoder). Ready for hardware.
 - 2026-08-27 — Q19 → D34: shipped model treated as commercial-adjacent; NC datasets eval-only; clean training data = own + community + permissive mocap.
 - 2026-08-27 — §H synthesis written (5 notes): Blender/XRFeitoria route; all body/motion assets NC (Q19); synthetic supplements real, never replaces; HMD-on-avatar from external cameras is a genuine gap.
