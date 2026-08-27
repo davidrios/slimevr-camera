@@ -77,6 +77,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-27 — Recorder + beacon implemented (host-driven serial LED, Manchester counter code, ffmpeg copy capture, correlation+fit decoder). Ready for hardware.
 - 2026-08-27 — Q19 → D34: shipped model treated as commercial-adjacent; NC datasets eval-only; clean training data = own + community + permissive mocap.
 - 2026-08-27 — §H synthesis written (5 notes): Blender/XRFeitoria route; all body/motion assets NC (Q19); synthetic supplements real, never replaces; HMD-on-avatar from external cameras is a genuine gap.
 - 2026-08-27 — Exp 04 complete on 5 subjects × 3 detectors (vulcanus): model size irrelevant, confirmed. Seated/idle motions: chest & feet inside budget as-is; hips need per-pose calibration; cross-legged is hardest.

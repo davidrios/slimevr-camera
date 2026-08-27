@@ -59,24 +59,32 @@ def binarize(v: np.ndarray) -> np.ndarray:
     return (v > (lo + hi) / 2).astype(int)
 
 
-def align(b: np.ndarray, fps_nominal: float, start_wall_guess: float, t_log, lvl_log, search_s: float = 60.0, step_s: float = 0.01):
-    """Return (a, b, corr) with wall_s = a*frame + b, found by correlation over start offsets."""
-    frames = np.arange(len(b)); best = (None, -1)
+def align(b: np.ndarray, fps_nominal: float, start_wall_guess: float, t_log, lvl_log, search_s: float = 60.0, step_s: float = 0.01, coarse_s: float = 8.0):
+    """wall_s = a*frame + b.  Coarse: correlate the first `coarse_s` seconds
+    (fps error accumulates < 1 symbol there) over start offsets; then refine
+    (a, b) iteratively on all transitions (absorbs fps drift)."""
+    n_c = min(len(b), int(coarse_s * fps_nominal)); frames = np.arange(n_c); best = (None, -1)
     for off in np.arange(-search_s, search_s, step_s):
-        t = start_wall_guess + off + frames / fps_nominal
-        h = host_level(t, t_log, lvl_log)
-        c = np.mean((2 * b - 1) * (2 * h - 1))
+        h = host_level(start_wall_guess + off + frames / fps_nominal, t_log, lvl_log)
+        c = np.mean((2 * b[:n_c] - 1) * (2 * h - 1))
         if c > best[1]: best = (off, c)
-    off = best[0]
-    # refine: transitions in video vs host transitions (nearest within a symbol)
-    tv = np.flatnonzero(np.diff(b) != 0) + 0.5                      # frame index of transition (between frames)
-    t_guess = start_wall_guess + off + tv / fps_nominal
-    th = t_log[np.abs(t_log[None, :] - t_guess[:, None]).argmin(1)]
-    ok = np.abs(th - t_guess) < SYM_S / 2
-    A = np.stack([tv[ok], np.ones(ok.sum())], 1)
-    (a, b0), *_ = np.linalg.lstsq(A, th[ok], rcond=None)
+    a, b0 = 1 / fps_nominal, start_wall_guess + best[0]
+    # rate search: the true fps may differ by a few % (cheap cameras); correlate the FULL clip over fps candidates
+    frames_all = np.arange(len(b)); best_r = (a, -1)
+    for fps in np.arange(fps_nominal * 0.96, fps_nominal * 1.04, fps_nominal * 0.0005):
+        h = host_level(b0 + frames_all / fps, t_log, lvl_log)
+        c = np.mean((2 * b - 1) * (2 * h - 1))
+        if c > best_r[1]: best_r = (1 / fps, c)
+    a = best_r[0]
+    tv = np.flatnonzero(np.diff(b) != 0) + 0.5                      # frame index of each transition
+    for _ in range(4):                                              # refine on transitions, growing the trusted span
+        t_guess = a * tv + b0
+        th = t_log[np.abs(t_log[None, :] - t_guess[:, None]).argmin(1)]
+        ok = np.abs(th - t_guess) < SYM_S / 2
+        A = np.stack([tv[ok], np.ones(ok.sum())], 1)
+        (a, b0), *_ = np.linalg.lstsq(A, th[ok], rcond=None)
     resid = th[ok] - A @ np.array([a, b0])
-    return dict(a=float(a), b=float(b0), fps=1 / a, corr=float(best[1]), n_transitions=int(ok.sum()), resid_ms=float(np.std(resid) * 1000))
+    return dict(a=float(a), b=float(b0), fps=float(1 / a), corr=float(best[1]), n_transitions=int(ok.sum()), resid_ms=float(np.std(resid) * 1000))
 
 
 def frame_times(video: Path, host_log: Path, start_json: Path, xy=None, fps_nominal=None, out_csv: Path | None = None):

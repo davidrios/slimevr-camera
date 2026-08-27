@@ -22,7 +22,10 @@ def word_symbols(counter: int) -> list[int]:
 
 def level_at(t_from_start: float, counter0: int = 0) -> int:
     """Host-side reference: LED level at time t (s) since the run started."""
-    n = int(t_from_start // SYM_S); w, k = divmod(n, len(SYNC) + 32)
+    n = int((t_from_start + 1e-6) // SYM_S) if t_from_start >= 0 else -1   # +1e-6: 1.0 // 0.2 == 4.0 in float arithmetic
+    if n < 0:
+        return 0
+    w, k = divmod(n, len(SYNC) + 32)
     return word_symbols((counter0 + w) & 0xFFFF)[k]
 
 
