@@ -62,6 +62,10 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 3. **Recorder (tools/recorder):** 2× RTSP + tracker raw quaternions (reuse `TrackersSource` pattern from PR #1805) + beacon blink decode. Design the ESP32 beacon.
 4. Literature pass 2 (now higher priority): **§H synthetic data (AMASS + IMU simulation + game-engine rendering, BEDLAM)** — David's suggestion; the layer above the keypoint-level harness. Then §F quantisation/CPU inference; §E consumer IMU drift (CIP dataset); Lv & Nevatia 2006; verify 3DPW raw IMU.
 
+## Reports
+
+- Session 1 (2026-08-26): `docs/05-report-2026-08-26.md` (figures in `docs/figures/`); shareable page https://claude.ai/code/artifact/607b9343-0b9e-49be-a738-fd80362a6b70 (redeploy from `scratchpad/slimevr-camera-report.html` builder in session history — regenerate from the md if lost).
+
 ## Log
 
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
