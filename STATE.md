@@ -1,10 +1,10 @@
 # STATE — read first
 
-_Last updated: 2026-08-26 (session 1: scaffold, Q&A rounds 1–3, literature pass 1, PR #1805 analysis)_
+_Last updated: 2026-08-27 (sessions 1–2: framing, literature §A–§H, exps 01–05, MoVi pilot, recorder + beacon built)_
 
 ## Status
 
-Phase 0 → 1. Framing done (Q1–Q15 answered, D1–D22). Literature pass 1 complete (§A–§D, §G, §G2, §H; `docs/04-lit-synthesis.md`, 31 notes). Community search done (`notes/community-prior-work.md`). **Key find: SlimeVR-Server PR #1805 (jabberrock, Stay Aligned author) is a one-shot video-calibration proof of concept that already does camera→IMU yaw + mounting correction.** Fetched locally as branch `pr-1805` in `../SlimeVR-Server` (70 files, +8.5k lines, commit 487e2419, 2026-03-16). **Exp 04 first result (MoVi, RTMPose-m, 3 subjects): real-detector heading error is pose-dependent, not white — 1-s averaging leaves 5–11° sd (chest 5, hip 7, shins 5–6, thighs 10–11); 5° budget NOT met by an off-the-shelf detector at 800×600/4.5 m. Fine-tuning (D28) is load-bearing.** Bigger detector (RTMPose-x wholebody) does NOT help → structural. Feet (toes from wholebody) are the *best* heading source when still (MAE ~1.7°), thighs the worst. Experiments 01–02 (synthetic) done. Exp 02 (revised): drift is a motion-driven random walk of unmeasured magnitude σ_m; residual ∝ σ_m·√(gross motion since last correction); required cadence unknown until σ_m is measured (Q17). camera heading error inside still windows < 2° at 10 px noise for all 11 trackers; residual after correction 1–3° dominated by drift between windows. See `experiments/01-synthetic-heading/README.md`. Harness code in `src/slimevr_camera/`.
+Phase 1 → 2. Framing settled (D1–D34). Literature grounded (§A–§H, 37 notes). Synthetic harness (exps 01–02) and real-detector measurements on MoVi (exps 04–05, 5 subjects × 3 detectors) done. **Product shape: automatic full reset in familiar poses (D33).** Recorder + sync beacon built and verified on synthetic video; DriftLogger extended for HMD/controllers. **Next: first own-room recordings (needs David's hardware step), then the familiar-pose reset pipeline.**
 
 ## Working hypothesis (validated by VIP 2018 ablation; heading accuracy still unmeasured)
 

@@ -1,9 +1,10 @@
 # 02 — Research agenda
 
-Everything below is a **candidate to verify**, written from model memory.
-A topic is "grounded" only when a note exists in `literature/` and is linked
-from `literature/index.md`. Names/years may be wrong; that's what the
-verification pass is for.
+Status 2026-08-27: §A, §B, §C, §D, §G (+§G2 multi-view marker-GT datasets)
+and §H are grounded — see `04-lit-synthesis.md` and `literature/index.md`
+(37 notes). §E (consumer IMU drift) is covered by drift-lab's own
+measurements; §F (quantisation / CPU inference) is deferred until a model
+is chosen. The candidate lists below are kept as written for the record.
 
 ## A. IMU + video fusion for human pose (closest prior art)  — priority 1
 

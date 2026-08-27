@@ -48,17 +48,18 @@ Components:
    stable. Do *not* gate on model confidence alone — RobustCap/DiffCap report
    MediaPipe confidence gating is brittle (§A). Stillness also makes
    clock-sync error irrelevant.
-3b. **Clock sync (D17).** Coded blinking LED (ESP32 on the tracker network,
-   IR or visible) in view of both cameras; blink times reported to the server
-   → every frame is stamped on the server clock regardless of RTSP latency.
-   Doubles as a fixed fiducial. See `notes/ir-beacon-idea.md`.
-4. **Correction (D14).** Drift model per VIP 2018: one rotation about
-   world-up per tracker, piecewise-constant between corrections. For each
-   tracker `i`, `Δψ_i = ψ_i^cam − ψ_i^imu`, low-passed over several gated
-   windows; correct the hip/root first, children relative to it (§A lesson).
-   Watch mounting slip as a separate slow variable (TIC 2025). Apply through
-   PR #1805's `TrackerResetOverride` hook into `TrackerResetsHandler` — SolarXR
-   has no yaw-correction message, so a server hook is required.
+3b. **Clock sync (D17, built).** LED beacon driven by the recording PC over
+   USB serial; the PC logs every transition on the same wall clock DriftLogger
+   uses → every frame is stamped on the tracker clock regardless of RTSP
+   latency (decoder verified to ~20 ms). Doubles as a fixed fiducial. See
+   `06-recorder-beacon.md`.
+4. **Correction (D14, D31, D32).** Per tracker a full 3-DoF offset (yaw +
+   tilt + mounting), piecewise-constant between corrections; yaw from the
+   lateral-feature axis, tilt from bone direction. The camera's own bias in
+   the pose is subtracted using the per-pose correction learned in the
+   trusted post-reset window. Apply through the full-reset path (the Stay
+   Aligned raw-space yaw slot in `Tracker.kt:300` for yaw, D22); SolarXR has
+   no correction message, so it is a server hook.
 
 ## Why heading and not full pose
 

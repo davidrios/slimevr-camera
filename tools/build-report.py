@@ -129,20 +129,21 @@ html = f'''<title>SlimeVR Camera Correction</title>
 <ul>
 <li>Local machine: data and analysis; datasets on <code>/mnt/data2</code>. GPU box <code>vulcanus</code> (RTX 3090): 45–65 fps RTMPose with a CUDA-12 onnxruntime declared in <code>pyproject</code>; 250 GB ext4 image on <code>/mnt/slimevr-data</code>; reproducible via <code>tools/vulcanus-setup.sh</code>.</li>
 <li>MoVi pilot (5 subjects, both views, three detector variants) cached on both machines; verified loader in <code>slimevr_camera.data.movi</code>; evaluation in <code>experiments/04-movi-detector-bias/evaluate.py</code>.</li>
-<li>uv-managed Python 3.12 project; tests; experiment folders with READMEs; <code>STATE.md</code> with decisions D1–D33; this report is built by <code>tools/build-report.py</code>.</li>
+<li><b>Own-room recorder + sync beacon, built and verified.</b> One clock — the recording PC's wall clock: the LED beacon is driven by the PC over USB serial and every transition is logged; the tracker logger uses the same clock, so no NTP and no firmware timekeeping. 200 ms symbols carrying a Manchester-coded counter; <code>ffmpeg -c copy</code> capture; a decoder that auto-locates the LED, correlates against the host log, searches the true fps and fits frame→wall time — on synthetic video the start is recovered within 20 ms and the fps within 0.05. The server's DriftLogger now also records HMD/controller positions to anchor camera extrinsics. Design and session protocol in <code>docs/06-recorder-beacon.md</code>.</li>
+<li>uv-managed Python 3.12 project; tests; experiment folders with READMEs; <code>STATE.md</code> with decisions D1–D34; this report is built by <code>tools/build-report.py</code>.</li>
 </ul>
 
 <h2>6 · Open threads</h2>
 <ul>
-<li>TotalCapture access (requested); Fit3D as backup.</li>
+<li><b>Licence policy settled:</b> the shipped model is treated as commercial-adjacent (open source, not sold, but used with hardware SlimeVR sells), so non-commercial datasets — MoVi, TotalCapture, AMASS/SMPL-X/BEDLAM — are for evaluation only; training data is own recordings, community donations, and permissive source mocap. TotalCapture request pending, validation-only.</li>
 <li><b>Synthetic data (§H), now synthesised:</b> Blender + MPI SMPL-X add-on + XRFeitoria on Linux is the open route, with our own headset/controller meshes; every body and motion asset (AMASS, SMPL-X, BEDLAM) is non-commercial and that propagates to trained weights — a licence decision is needed before building. The domain-gap literature is consistent: synthetic supplements real labels, never replaces them, and pays off on a specific gap. Nobody has measured a 2D detector on a headset wearer from a third-person camera, so the first step is a ~200-frame real labelled VR test set and a cheap headset copy-paste augmentation test.</li>
-<li>Optional experiment 03 (on-body drift with known-pose returns); RTSP camera model.</li>
+<li>Optional experiment 03 (on-body drift with known-pose returns); RTSP camera model; whether the cameras see the Quest controllers' IR LEDs.</li>
 </ul>
 
 <h2>7 · Next steps</h2>
 <ol>
-<li><b>Build the automatic full reset in familiar poses.</b> Familiar-pose detector (templates from the manual reset and the seated/idle stances, learned while trusted); in-pose measurement of pelvis, chest and feet headings and bone directions; application through the full-reset path; confidence → prompt. Evaluate on MoVi still stances, then on our own recordings.</li>
-<li><b>Own-room dataset:</b> two RTSP cameras + 11 trackers + Quest 3, with the ESP32 coded-blink beacon for sync. This is where recurring idle poses exist.</li>
+<li><b>First own-room recordings.</b> David: flash the beacon sketch on a spare ESP32 with an LED, mount the two cameras, rebuild the server from <code>drift-logger</code>, run a session per the protocol (standing reset → seated idle → everyday activity → return to the seated pose, repeated; dance burst + reset at the end). Claude: events-marking tool and a loader for own recordings.</li>
+<li><b>Build the automatic full reset in familiar poses.</b> Familiar-pose detector (templates from the manual reset and the seated/idle stances, learned while trusted); in-pose measurement of pelvis, chest and feet headings and bone directions; per-pose bias from the trusted window; application through the full-reset path; confidence → prompt. Evaluate on MoVi still stances, then on own recordings.</li>
 <li><b>Pose-conditioned correction model:</b> global fine-tuning on MoVi / TotalCapture / synthetic-with-headset data, refined per session.</li>
 <li><b>Runtime scheduler:</b> per-unit drift statistics from successive corrections; bone weighting by measured reliability.</li>
 </ol>

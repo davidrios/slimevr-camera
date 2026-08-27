@@ -56,3 +56,8 @@ Answered questions get a short answer here **and** the consequence recorded in
 - **Q13** per-bone target → **A:** fine; feet can wait, least concern.
 - **Q15** PR #1805 → **A:** unknown author, no context. Reference only, build clean.
 - **Q6b** night mode → **A:** camera has night mode, maybe not switchable at will; buying/hacking a specific model is acceptable.
+
+## Round 4 (2026-08-27)
+- **Q19** licence → **A:** open source, not sold, but used with hardware SlimeVR sells → treated as commercial-adjacent (D34). MPI data not used for training; TotalCapture validation-only; waiting on their reply.
+- **Q17** on-body drift run → optional (D26).
+- Still open: **Q6b** RTSP camera model; **Q14** whether the cameras see the Touch Plus IR LEDs in night mode; **Q16** turning statistics (minor).

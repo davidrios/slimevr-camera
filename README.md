@@ -13,6 +13,15 @@ and essentially zero user calibration.
 This is a research project run collaboratively between David and Claude across
 many sessions. Nothing here is a product yet.
 
+**Where it stands (2026-08-27):** the product shape is an *automatic full
+reset in familiar poses* (standing reset pose, seated relaxed idle) rather
+than correction during arbitrary motion; off-the-shelf 2D detectors have a
+structural, pose-dependent heading error (5–13° after averaging) that model
+size does not fix, but it is repeatable within a pose (~2°) and therefore
+learnable in the trusted window after a manual reset. The own-room recorder
+and sync beacon are built; first real recordings are the next step. Details
+in `STATE.md` and the report.
+
 ## How to navigate
 
 | File | What it is |
@@ -23,11 +32,16 @@ many sessions. Nothing here is a product yet.
 | `docs/01-approach.md` | Proposed architecture: what the camera must provide, when to correct, how to fuse. |
 | `docs/02-research-agenda.md` | What we must ground in literature, ranked; candidate papers *to verify*. |
 | `docs/03-questions.md` | Questions for David — answered ones move into `STATE.md` decisions. |
+| `docs/04-lit-synthesis.md` | Grounded findings per research-agenda section (§A–§H), each traced to `literature/`. |
+| `docs/05-report-2026-08-26.md` | Consolidated report with figures (`docs/figures/`); shareable page built by `tools/build-report.py`. |
+| `docs/06-recorder-beacon.md` | Own-room recorder + sync-beacon design and session protocol. |
 | `literature/` | One note per paper actually read, plus `index.md`. Only cite what's in here. |
 | `data/` | Data collection plan, formats, and (later) captured runs. |
 | `experiments/` | Numbered experiment folders, each with a `README.md` recording result. |
 | `notes/` | Scratch thinking; may be wrong; may be deleted. |
-| `tools/` | Scripts. |
+| `src/slimevr_camera/` | Python package: skeleton/geometry/heading/pipeline core, `synth/`, `data/movi.py`, `recorder/`. |
+| `firmware/beacon/` | Arduino/ESP32 sketch for the serial-driven sync LED. |
+| `tools/` | `vulcanus-setup.sh` (GPU box), `build-report.py`. |
 
 ## Related local work
 
