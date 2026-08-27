@@ -101,6 +101,20 @@ covers the face, so it is largely anonymized already. Plan two tiers:
 raw video (opt-in) and derived-only (keypoints/poses). Raw video is far more
 valuable for fine-tuning.
 
+## Product shape (D33, 2026-08-26): automatic full reset in familiar poses
+
+We do not correct arbitrary motion. During the manual full reset (and the
+user's habitual idle stances) the SlimeVR body model is trusted; the camera
+learns what those poses look like and what its own bias is there. Whenever the
+user is later seen in such a pose, the system performs the equivalent of a
+full reset automatically: pelvis, chest and feet headings plus bone directions
+are measured (all well-observed in a standing stance; feet ~1.7°, chest
+~3–4°), and thighs/shins follow the same pose assumption the manual reset
+makes. Heavy activity that drifts the trackers a lot is followed by a manual
+reset, as today. The user is a participant: the system may ask for the reset
+pose when its confidence is low. Success = the manual-reset horizon under
+everyday movement grows from minutes to a session.
+
 ## Principle: the IMU is a black box (D26/D27)
 
 Tracker sets in the field vary without bound (sensors, builds, straps,
