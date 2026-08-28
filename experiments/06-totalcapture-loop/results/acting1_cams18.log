@@ -1,0 +1,47 @@
+fitted footL axis in foot frame: [ 0.16 -0.93  0.33] (spread sd [0.13 0.14 0.11], n=3889)
+fitted footR axis in foot frame: [-0.05 -0.97  0.23] (spread sd [0.13 0.08 0.15], n=3899)
+
+=== Stage A (acting1_cams18_wholebody-performance): detector heading error vs Vicon, per frame (reset-referenced)
+                   n   bias     sd    mae     p95
+bone   still                                     
+chest  False  3093.0  -0.95   5.78   4.31   12.10
+       True   1022.0   0.08   5.43   3.67   14.48
+footL  False  2670.0   0.24  16.06   7.17   22.72
+       True   1368.0  -0.93   6.27   3.46    9.31
+footR  False  2749.0  -0.86  13.50   7.37   22.24
+       True   1308.0   0.14   9.26   5.72   18.71
+hip    False  3292.0  -1.81   9.93   7.43   22.38
+       True    823.0  -1.65   7.36   5.26   17.10
+shinL  False  1342.0  -0.40  14.32   6.52   22.76
+       True      9.0  -8.38  10.17  10.51   19.66
+shinR  False  1157.0  10.23  33.69  14.78   88.17
+       True     10.0  75.48  60.55  82.64  123.08
+thighL False  1348.0  -0.43  14.31   6.53   22.73
+       True      3.0 -10.60   8.84  10.60   16.21
+thighR False  1155.0  10.36  33.84  14.90   90.73
+       True     12.0  51.90  64.01  60.23  122.61
+
+1-s rolling mean:
+             n   bias     sd    mae    p95
+bone                                      
+chest   4066.0  -0.73   4.53   3.30   8.62
+footL   3989.0  -0.21   7.43   4.23  13.87
+footR   4008.0  -0.55   5.93   4.09  13.19
+hip     4066.0  -1.79   7.25   5.65  16.14
+shinL   1302.0  -0.52   4.79   2.92  13.23
+shinR   1118.0  11.23  20.68  12.56  52.84
+thighL  1302.0  -0.52   4.79   2.92  13.23
+thighR  1118.0  11.23  20.68  12.56  52.84
+
+=== Stage B (acting1_cams18_wholebody-performance): end-to-end loop, 0 FAMILIAR still windows (pose within 0.35 of the first 3 s; >= 0.5 s; < 20.0 deg/s)
+    windows (s): []
+  bone  imu_only  drifted  corrected  corrected_p95  n_corrections
+   hip      2.64     3.03       3.03           5.37              0
+ chest      1.82     2.44       2.44           4.68              0
+thighL      5.78     5.89       5.89          11.14              0
+thighR     11.20    11.48      11.48          21.09              0
+ shinL     10.17    11.25      11.25          32.30              0
+ shinR      9.71    10.10      10.10          20.69              0
+ footL      8.53     7.97       7.97          13.68              0
+ footR      4.46     9.11       9.11          16.19              0
+imu_only = calibrated Xsens vs Vicon (the floor); drifted = + injected drift; corrected = camera yaw correction in still windows

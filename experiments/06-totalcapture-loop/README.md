@@ -57,3 +57,5 @@ The IMU floor itself is a useful number: calibrated Xsens vs Vicon is
 with a careful calibration is *already* off by more than our 5° budget on
 the legs, which says the legs' "truth" in any IMU-vs-camera comparison is
 soft and the camera's own accuracy on legs is not the only limit.
+
+## acting1 (cam1+cam8): chest 4.5°, hip 7.3°, feet 5.9–7.4°, thigh/shin L 4.8° but R 20.7° sd (right leg frequently side-on/occluded from this pair — the bias is view-dependent, as on MoVi). Zero familiar still windows. Stage A totals over the three S1 clips are consistent with MoVi to within a degree on every bone.
