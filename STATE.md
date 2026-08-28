@@ -60,7 +60,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 ## Next actions
 
 1. **David — hardware for the own-room recorder:** flash `firmware/beacon/beacon.ino` on a spare Wemos D1 mini (LED on D1/GPIO5 + resistor; see `firmware/beacon/README.md`), plug into the recording PC; mount the 2 RTSP cameras (~2–3 m high, ±30–45° in front); rebuild the server from the `drift-logger` branch (commit 8fe456e1 adds HMD/controller positions). Then a first session per `docs/06-recorder-beacon.md` §protocol.
-2. **Claude — session tooling:** `events` marking tool (reset / pose labels with wall time); run-folder assembler (`data/runs/<stamp>_<label>/`); loader for own recordings mirroring `data/movi.py` (frame→wall via beacon, DriftLogger, BVH, HMD).
+2. Session tooling DONE: `recorder/events.py` (interactive reset/pose marks on the wall clock), `recorder/session.py` (run-folder loader: frame times, events, DriftLogger, trusted windows, holds). Blob detector + epipolar matching + triangulation for the tape idea in `markers.py` (tested on synthetic blobs: 5 cm separations to < 4 mm). Waiting on David's hardware/tape frames.
 3. **Automatic full reset in familiar poses (D33) — the build target:** familiar-pose detector (templates learned while trusted: standing reset + seated idle); in-pose measurement of pelvis/chest/feet headings and bone directions (3-DoF, D31); per-pose bias learned in the trusted window (D32); application through the full-reset path; confidence → prompt. Evaluate first on MoVi still stances, then on own recordings.
 4. **HMD gap, cheap first (§H):** off-the-shelf detectors on own headset footage; label ~200 frames; test headset copy-paste augmentation on COCO before any rendering.
 5. **Runtime scheduler:** per-unit drift statistics from successive corrections; bone weighting per D30.
@@ -76,6 +76,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-28 — Session tooling (events, run loader) and marker blob detector written; report updated to session 3.
 - 2026-08-28 — Exp 06 acting1: consistent; right leg 20° sd when side-on (view-dependent bias). TotalCapture stage A complete for S1 (3 clips).
 - 2026-08-28 — Exp 06 freestyle1: same detector numbers; TotalCapture has no recurring still poses → cannot test the familiar-pose loop (stage B); that needs own recordings. IMU floor (Xsens vs Vicon) 2–3° torso, 6–10° legs.
 - 2026-08-28 — David: retroreflective tape on trackers (passive markers lit by the cameras' IR illuminators) — could bypass detector bias entirely for tracker position/heading; feasibility test proposed (Q20).
