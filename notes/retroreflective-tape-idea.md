@@ -42,3 +42,24 @@ from each camera. Look for saturated blobs; note blob diameter and whether
 they survive ±45° tilt. Then I write the blob detector + triangulation and
 check the triangulated patch-to-patch distance against the ruler (a
 GT-free accuracy test).
+
+## First test, 2026-08-28 (camera 2 "VR1", 1080p20, wide lens, marker mode: night vision Normal + IR LED on + targety=15)
+
+- Recording: 90 s, David holding the taped tracker at several positions
+  ~3–5 m from the camera, 10-s holds. Files: `tape-test/cam2_tape_143609.*`.
+- **The tape retroreflects** — patches reach 255 (saturated) against a
+  background of ~55–65 (≥4–5× contrast) — but the blobs are **small: radius
+  ~1.5–2.5 px (3–6 px across)** at this distance with this wide-angle lens,
+  and the tracker case edges and David's glasses produce saturated pixels of
+  similar size. Detection is feasible but marginal; identification would
+  lean on geometry/prediction.
+- Static clutter: window/TV edges give many saturated pixels; masking the
+  window and subtracting an empty-room background handles most of it.
+- What would make it robust: larger patches (≥2×2 cm; the current ones look
+  ~1 cm), microprismatic tape, testing at night (no daylight window),
+  targety ≈ 10, cameras closer or a narrower lens (this one is very wide:
+  few px per cm at 4 m). Two or three patches per tracker in a known layout.
+- Camera control recipe now scripted (`recorder/camera_ctl.py`): night
+  vision Normal (`setlampattrex&-lamp_mode=0`) + IR LED on
+  (`setinfrared&-infraredstat=open`) + `setimageattr&-image_type=<active
+  profile>&-targety=15`.
