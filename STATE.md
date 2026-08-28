@@ -75,6 +75,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-28 — Exp 06 stage A (walking1, cam1+cam8, 1080p): same detector error as MoVi at 800×600 — resolution doesn't help either; feet fixed via fitted foot axis. Stage B needs still poses → freestyle1/acting1 detecting on vulcanus.
 - 2026-08-28 — TotalCapture S1 metadata in, loader written, conventions verified; walking1 video downloading.
 - 2026-08-27 — TotalCapture access granted (validation-only per D34).
 - 2026-08-27 — Recorder + beacon implemented (host-driven serial LED, Manchester counter code, ffmpeg copy capture, correlation+fit decoder). Ready for hardware.

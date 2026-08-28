@@ -30,7 +30,8 @@ COCO17 = ["nose", "eyeL", "eyeR", "earL", "earR", "shoulderL", "shoulderR", "elb
 WB_TOE = {"toeL": 17, "toeR": 20}
 TRACKER_BONE = {v: k for k, v in BONE_TO_TRACKER.items()}
 SEG_LOCAL_AXIS = {"hip": [1, 0, 0], "chest": [1, 0, 0], "thighL": [-1, 0, 0], "thighR": [-1, 0, 0], "shinL": [-1, 0, 0], "shinR": [-1, 0, 0],
-                  "footL": [0, 1, 0], "footR": [0, 1, 0]}     # fitted 2026-08-28 from Vicon joint positions (s1/walking1)
+                  "footL": None, "footR": None}   # exact from Vicon joints (s1/walking1); feet: no toe joint in TotalCapture -> axis fitted from data (see fit_foot_axes)
+GATE_BONES = ["hip", "chest", "thighL", "thighR", "shinL", "shinR", "footL", "footR"]
 IMU_OF = {v: k for k, v in IMU_TO_BONE.items()}                # bone -> sensor
 
 
@@ -68,6 +69,17 @@ def camera_axes(seq, cams, kps, min_score=0.3):
     return out
 
 
+def fit_foot_axes(seq, axes, min_q=0.5):
+    """The observed heel->toe direction expressed in the Vicon foot frame is a
+    constant (the mounting offset a reset absorbs). Fit it as the mean of
+    R^T @ observed_axis over confident frames; store into SEG_LOCAL_AXIS."""
+    for n in ("footL", "footR"):
+        R = seq.gt_bone_world(TRACKER_BONE[n]); ax, q = axes[n]; T = min(len(R), len(ax))
+        good = (q[:T] > min_q) & ~np.isnan(ax[:T]).any(1)
+        loc = np.einsum("tji,tj->ti", R[:T].as_matrix()[good], ax[:T][good]); m = np.median(loc, 0); m /= np.linalg.norm(m)
+        SEG_LOCAL_AXIS[n] = m.tolist(); print(f"fitted {n} axis in foot frame: {m.round(2)} (spread sd {loc.std(0).round(2)}, n={good.sum()})")
+
+
 def stage_a(seq, axes, out_dir, tag):
     rows = []
     for n, loc in SEG_LOCAL_AXIS.items():
@@ -97,11 +109,11 @@ def inject_drift(R: Rot, fps, rng, rw=0.02, scale=0.004, mrw=0.05):
     return Rot.from_rotvec(np.outer(d, UP)) * R, d, gross
 
 
-def stage_b(seq, axes, out_dir, tag, seed=0, still_deg_s=8.0, min_still_s=1.0):
+def stage_b(seq, axes, out_dir, tag, seed=0, still_deg_s=20.0, min_still_s=0.5):
     rng = np.random.default_rng(seed); fps = seq.fps
     # still windows from the IMU angular speeds (all sensors)
     speeds = []
-    for sensor in IMU_TO_BONE:
+    for sensor in [IMU_OF[TRACKER_BONE[b]] for b in GATE_BONES]:
         Ri = seq.imu_bone_world(sensor); speeds.append(np.concatenate([[0], np.rad2deg(np.linalg.norm((Ri[1:] * Ri[:-1].inv()).as_rotvec(), axis=1)) * fps]))
     sp = np.max(speeds, 0); still = sp < still_deg_s
     wins, i = [], 0
@@ -145,4 +157,5 @@ if __name__ == "__main__":
     kps = [np.load(ROOT / "keypoints" / f"s{a.subject}_{a.seq}_cam{c}_{a.model}.npz") for c in a.cams]
     tag = f"{a.seq}_cams{''.join(map(str, a.cams))}_{a.model}"
     axes = camera_axes(seq, cams, kps)
+    fit_foot_axes(seq, axes)
     stage_a(seq, axes, a.out, tag); stage_b(seq, axes, a.out, tag)
