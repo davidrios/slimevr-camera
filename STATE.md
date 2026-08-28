@@ -53,6 +53,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 - **Q17 Measure σ_m** — protocol agreed in principle: `experiments/03-onbody-drift/PROTOCOL.md` (worn set, reset in a jigged known pose, move, return + hold, repeat; DriftLogger raw @100 Hz, not BVH). Waiting on David to run it.
 - Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
+- **Q20 Retroreflective tape feasibility** (`notes/retroreflective-tape-idea.md`): do the cameras show saturated blobs from tape on a tracker at 3–5 m in night mode, and can night mode be forced under room light? A 10-minute test decides whether passive-marker tracking bypasses the detector-bias problem for position/heading.
 - Q6b Exact RTSP camera model/resolution/fps. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
 - Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
 
@@ -75,6 +76,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-28 — David: retroreflective tape on trackers (passive markers lit by the cameras' IR illuminators) — could bypass detector bias entirely for tracker position/heading; feasibility test proposed (Q20).
 - 2026-08-28 — Exp 06 stage A (walking1, cam1+cam8, 1080p): same detector error as MoVi at 800×600 — resolution doesn't help either; feet fixed via fitted foot axis. Stage B needs still poses → freestyle1/acting1 detecting on vulcanus.
 - 2026-08-28 — TotalCapture S1 metadata in, loader written, conventions verified; walking1 video downloading.
 - 2026-08-27 — TotalCapture access granted (validation-only per D34).

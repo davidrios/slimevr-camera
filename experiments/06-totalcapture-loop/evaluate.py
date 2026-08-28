@@ -109,22 +109,62 @@ def inject_drift(R: Rot, fps, rng, rw=0.02, scale=0.004, mrw=0.05):
     return Rot.from_rotvec(np.outer(d, UP)) * R, d, gross
 
 
-def stage_b(seq, axes, out_dir, tag, seed=0, still_deg_s=20.0, min_still_s=0.5):
+def pose_descriptor(seq):
+    """Per-frame pose descriptor from the *IMU-derived* bone orientations (what the
+    server has): unit bone axes (local Y? -> use full rotation matrices rel. to hip yaw)
+    of the tracker bones, expressed in a hip-yaw-aligned frame so the descriptor is
+    heading-invariant."""
+    Rh = seq.imu_bone_world(IMU_OF["Hips"]); T = len(Rh)
+    yaw = heading(Rh.apply(np.tile([1.0, 0, 0], (T, 1)))); Ryaw = Rot.from_rotvec(np.outer(-yaw, UP))
+    feats = []
+    for b in GATE_BONES:
+        Rb = seq.imu_bone_world(IMU_OF[TRACKER_BONE[b]])[:T]
+        feats.append((Ryaw * Rb).as_matrix()[:, :, 1])              # bone local Y axis in hip-yaw frame
+    return np.concatenate(feats, 1)                                 # (T, 3*len(GATE_BONES))
+
+
+def familiar_windows(seq, trusted_s=3.0, still_deg_s=20.0, min_still_s=0.5, max_pose_dist=0.35):
+    """Windows that are still AND whose pose is close to a pose seen in the trusted
+    window (the first `trusted_s` seconds, standing in as 'after the manual reset')."""
+    fps = seq.fps; D = pose_descriptor(seq); T = len(D)
+    trusted = D[: int(trusted_s * fps)]
+    dist = np.array([np.min(np.linalg.norm(trusted - d, axis=1)) for d in D])          # nearest trusted pose
+    speeds = []
+    for sensor in [IMU_OF[TRACKER_BONE[b]] for b in GATE_BONES]:
+        Ri = seq.imu_bone_world(sensor)[:T]; speeds.append(np.concatenate([[0], np.rad2deg(np.linalg.norm((Ri[1:] * Ri[:-1].inv()).as_rotvec(), axis=1)) * fps]))
+    ok = (np.max(speeds, 0) < still_deg_s) & (dist < max_pose_dist)
+    wins, i = [], 0
+    while i < T:
+        if ok[i]:
+            j = i
+            while j < T and ok[j]: j += 1
+            if j - i >= min_still_s * fps: wins.append((i, j))
+            i = j
+        else: i += 1
+    return wins, dist
+
+
+def stage_b(seq, axes, out_dir, tag, seed=0, still_deg_s=20.0, min_still_s=0.5, familiar=True):
     rng = np.random.default_rng(seed); fps = seq.fps
     # still windows from the IMU angular speeds (all sensors)
     speeds = []
     for sensor in [IMU_OF[TRACKER_BONE[b]] for b in GATE_BONES]:
         Ri = seq.imu_bone_world(sensor); speeds.append(np.concatenate([[0], np.rad2deg(np.linalg.norm((Ri[1:] * Ri[:-1].inv()).as_rotvec(), axis=1)) * fps]))
     sp = np.max(speeds, 0); still = sp < still_deg_s
-    wins, i = [], 0
-    while i < len(still):
-        if still[i]:
-            j = i
-            while j < len(still) and still[j]: j += 1
-            if j - i >= min_still_s * fps: wins.append((i, j))
-            i = j
-        else: i += 1
-    print(f"\n=== Stage B ({tag}): end-to-end loop, {len(wins)} still windows (>= {min_still_s} s, all IMUs < {still_deg_s} deg/s)")
+    if familiar:
+        wins, dist = familiar_windows(seq, still_deg_s=still_deg_s, min_still_s=min_still_s)
+        print(f"\n=== Stage B ({tag}): end-to-end loop, {len(wins)} FAMILIAR still windows (pose within 0.35 of the first 3 s; >= {min_still_s} s; < {still_deg_s} deg/s)")
+        print("    windows (s):", [(round(a / fps, 1), round(b / fps, 1)) for a, b in wins][:12])
+    else:
+        wins, i = [], 0
+        while i < len(still):
+            if still[i]:
+                j = i
+                while j < len(still) and still[j]: j += 1
+                if j - i >= min_still_s * fps: wins.append((i, j))
+                i = j
+            else: i += 1
+        print(f"\n=== Stage B ({tag}): end-to-end loop, {len(wins)} still windows (>= {min_still_s} s, all IMUs < {still_deg_s} deg/s)")
     rows = []
     for n, loc in SEG_LOCAL_AXIS.items():
         bone = TRACKER_BONE[n]; sensor = IMU_OF[bone]; loc = np.asarray(loc, float)
