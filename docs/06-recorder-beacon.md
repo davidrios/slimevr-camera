@@ -87,3 +87,11 @@ detector; the beacon gives frame-accurate alignment throughout.
   `getimageattr`), which needs the web login (HTTP 401 otherwise). Camera
   clock is set to China Standard Time — irrelevant, the beacon supplies time.
 - Consequence for the beacon code: at 20 fps a 200 ms symbol is 4 frames — fine.
+
+### Camera control (verified 2026-08-28, `recorder/camera_ctl.py`)
+- CGI writes need `-image_type=0` (`cmd=setimageattr&-image_type=0&-targety=15`); without it every set fails. Admin account required.
+- **`targety` (AE target luminance) is the effective exposure lever**: 60 → 15 drops the frame mean from ~90 to ~32 while retroreflective/saturated regions stay at 255. `shutter` (1–10000) and `gc` ceilings had no visible effect in daylight (AE stays within limits); `aemode=1` sets `ae=64`.
+- IR LED: `setinfrared&-infraredstat=open|close|auto` works; night mode (`night=on`, B/W) is already active under daylight on this unit.
+- Snapshot `/tmpfs/auto.jpg` needs basic auth; RTSP `/11` (1080p20) and `/12` need none.
+- Security: this firmware returns all account passwords in clear text to any authenticated user (`getuserattr`) and RTSP is unauthenticated — LAN only.
+- Presets: `python -m slimevr_camera.recorder.camera_ctl marker [targety]` / `normal`.

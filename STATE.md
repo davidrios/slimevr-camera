@@ -55,7 +55,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
 - Q20 update 2026-08-28: camera's IR LED can be forced on; tape 'kind of works' in daylight. Next: force night mode (IR-cut out) + manual low exposure; frames into `/mnt/data2/.../tape-test/`. ONVIF endpoint of camera 1: http://192.168.15.60:8080/ (LAN). Consider microprismatic tape if glass-bead.
 - **Q20 Retroreflective tape feasibility** (`notes/retroreflective-tape-idea.md`): do the cameras show saturated blobs from tape on a tracker at 3–5 m in night mode, and can night mode be forced under room light? A 10-minute test decides whether passive-marker tracking bypasses the detector-bias problem for position/heading.
-- Q6b (mostly answered) camera 1: IPCAM/hi3510-family, 1080p H.264 @ 20 fps, RTSP open without auth, CGI (IR-cut/IR LED/exposure) needs web login → **David: put camera user,password in `/mnt/data2/david/work/slimevr-camera-data/cameras/.access`** so the system can set night mode/exposure itself. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
+- Q6b ANSWERED: camera control module works (`recorder/camera_ctl.py`, `-image_type=0` trick; `targety` sets exposure; IR LED switchable). Camera 1: IPCAM/hi3510-family, 1080p H.264 @ 20 fps, RTSP open without auth, CGI (IR-cut/IR LED/exposure) needs web login → **David: put camera user,password in `/mnt/data2/david/work/slimevr-camera-data/cameras/.access`** so the system can set night mode/exposure itself. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
 - Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
 
 ## Next actions
@@ -77,6 +77,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-28 — Camera 1 fully controllable via CGI (targety exposure lever, IR LED); night mode already on in daylight; `camera_ctl.py` written. Tape test now needs only the tracker in view.
 - 2026-08-28 — Session tooling (events, run loader) and marker blob detector written; report updated to session 3.
 - 2026-08-28 — Exp 06 acting1: consistent; right leg 20° sd when side-on (view-dependent bias). TotalCapture stage A complete for S1 (3 clips).
 - 2026-08-28 — Exp 06 freestyle1: same detector numbers; TotalCapture has no recurring still poses → cannot test the familiar-pose loop (stage B); that needs own recordings. IMU floor (Xsens vs Vicon) 2–3° torso, 6–10° legs.
