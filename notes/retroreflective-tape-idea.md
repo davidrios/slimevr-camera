@@ -63,3 +63,16 @@ GT-free accuracy test).
   vision Normal (`setlampattrex&-lamp_mode=0`) + IR LED on
   (`setinfrared&-infraredstat=open`) + `setimageattr&-image_type=<active
   profile>&-targety=15`.
+
+## Marker design v2 (2026-08-28, after test #1)
+Test #1 used three 1.5×1.5 cm patches (one on top, two at the case edges —
+already at the size limit). Measured scale ≈ 3 px/cm at 3–5 m with the wide lens.
+- **Bar + dot per tracker** instead of three dots: a 4.5×1.5 cm bar across the
+  case top gives a ~12 px blob whose elongation is a 3D line from two views
+  (= tracker in-plane axis / heading); a small dot at one end fixes direction.
+  Bar length / dot count can identify trackers.
+- **Reflective band on the strap** (2 cm wide, David's idea "tape on myself"):
+  a ring around the limb → ellipse in each view → limb axis (tilt) for free,
+  larger and angle-tolerant. Running-safety bands are exactly this.
+- Next test: night, window dark, targety≈10, one tracker with bar+dot and a
+  strap band on the thigh; holds at 2/3/4/5 m + slow turn.
