@@ -53,6 +53,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 
 - **Q17 Measure σ_m** — protocol agreed in principle: `experiments/03-onbody-drift/PROTOCOL.md` (worn set, reset in a jigged known pose, move, return + hold, repeat; DriftLogger raw @100 Hz, not BVH). Waiting on David to run it.
 - Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
+- Q20 update 2026-08-28: camera's IR LED can be forced on; tape 'kind of works' in daylight. Next: force night mode (IR-cut out) + manual low exposure; frames into `/mnt/data2/.../tape-test/`. ONVIF endpoint of camera 1: http://192.168.15.60:8080/ (LAN). Consider microprismatic tape if glass-bead.
 - **Q20 Retroreflective tape feasibility** (`notes/retroreflective-tape-idea.md`): do the cameras show saturated blobs from tape on a tracker at 3–5 m in night mode, and can night mode be forced under room light? A 10-minute test decides whether passive-marker tracking bypasses the detector-bias problem for position/heading.
 - Q6b Exact RTSP camera model/resolution/fps. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
 - Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
