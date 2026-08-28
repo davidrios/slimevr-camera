@@ -74,3 +74,16 @@ detector; the beacon gives frame-accurate alignment throughout.
 - Wemos D1 mini (David has spares) — see `firmware/beacon/README.md` for wiring (LED on D1/GPIO5).
 - 1× visible LED (+ optional 850 nm IR LED), 2 resistors, small diffuser.
 - 2 RTSP cameras (have), mounted ~2–3 m high at ±30–45° in front.
+
+## Camera 1 facts (probed 2026-08-28, ONVIF at http://192.168.15.60:8080/)
+
+- Firmware `V32.1.21.16.3-20240416`, model string `C6F0SgZ3N0PmL2`, "IPCAM"
+  (HiSilicon/hi3510-style CGI, `/tmpfs/auto.jpg` snapshot). PTZ service present.
+- Main stream **1920×1080 H.264 @ 20 fps**: `rtsp://192.168.15.60:554/11`
+  (works **without credentials**); second stream `/12`. Audio G.711.
+- ONVIF imaging exposes only brightness / "manual exposure"; IR-cut, IR LED
+  and exposure/gain are in the CGI API (`/cgi-bin/hi3510/param.cgi?cmd=…`,
+  e.g. `getinfrared`, `setinfrared&-infraredstat=open|close|auto`,
+  `getimageattr`), which needs the web login (HTTP 401 otherwise). Camera
+  clock is set to China Standard Time — irrelevant, the beacon supplies time.
+- Consequence for the beacon code: at 20 fps a 200 ms symbol is 4 frames — fine.
