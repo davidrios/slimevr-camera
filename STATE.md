@@ -78,6 +78,7 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 - 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
 - 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
 - 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
+- 2026-08-28 — Marker v2 estimators in `markers.py`: bar orientation from blob moments → 3D bar line from two views (~3° in synthetic test), ring ellipse axis for strap bands. Awaiting David's night test with bar+dot and strap band.
 - 2026-08-28 — Tape test #1 on camera 2: patches saturate but are tiny at this distance/lens; recipe for night-vision + IR + exposure scripted.
 - 2026-08-28 — Camera 1 fully controllable via CGI (targety exposure lever, IR LED); night mode already on in daylight; `camera_ctl.py` written. Tape test now needs only the tracker in view.
 - 2026-08-28 — Session tooling (events, run loader) and marker blob detector written; report updated to session 3.
