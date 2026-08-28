@@ -59,9 +59,14 @@ class Hi3510Camera:
         r = requests.get(f"{self.base}/tmpfs/auto.jpg", auth=self.auth, timeout=self.timeout); r.raise_for_status(); out.write_bytes(r.content); return out
 
     # presets
+    def set_night_vision(self, lamp_mode: int = 0) -> bool:
+        """UI 'Night Vision Mode': 0 = Normal (IR-cut filter out -> B/W), other values keep colour.
+        Verified 2026-08-28: lamp_mode=0 + infraredstat=open is what makes the camera go B/W."""
+        return "Succeed" in self._get(f"cmd=setlampattrex&-lamp_mode={lamp_mode}")
+
     def marker_mode(self, targety: int = 15) -> bool:
-        """Night mode + IR LED on + dark AE target: retroreflective patches stay saturated, room goes dim."""
-        ok = self.set_infrared("open")
+        """Night vision Normal + IR LED on + dark AE target: retroreflective patches stay saturated, room goes dim."""
+        ok = self.set_night_vision(0) and self.set_infrared("open")
         ok &= self.set_image(night="on")          # switches the active profile to night (image_type 0)
         return ok and self.set_image(targety=targety)
 
