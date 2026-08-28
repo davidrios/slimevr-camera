@@ -35,3 +35,25 @@ no still windows (continuous walking); the single 0.5-s window found made
 things worse — as D33 predicts, corrections belong in still, familiar poses.
 Next: freestyle1 / acting1 (pauses expected), then a proper familiar-pose
 gate rather than a stillness threshold.
+
+## freestyle1 (cam1+cam8, RTMPose-x wholebody), 2026-08-28
+
+Stage A, 1-s rolling mean: chest 4.9°, feet 5.3 / 2.9°, hip 8.6°,
+thighs/shins 5.2 / 8.1° — same picture as walking1 and MoVi; feet again the
+best when observable.
+
+Stage B: **TotalCapture cannot test the familiar-pose loop.** Performers
+never pause: the only still-and-familiar window in a 1-minute clip is the
+opening stance itself (0.8–1.6 s), so the "correction" is applied from the
+trusted window and then nothing recurs. The one early correction also shows
+the known hip bias (~7°) being written into the IMU — exactly why the
+per-pose bias must be learned first (D32). Conclusion: TotalCapture is a
+detector-error and IMU-floor benchmark (stage A), not an end-to-end one;
+the end-to-end loop needs sessions with recurring idle poses — David's own
+recordings (exp 07, once the recorder hardware is up).
+
+The IMU floor itself is a useful number: calibrated Xsens vs Vicon is
+2–3° for hip/chest and 6–10° for legs on these clips — a research-grade IMU
+with a careful calibration is *already* off by more than our 5° budget on
+the legs, which says the legs' "truth" in any IMU-vs-camera comparison is
+soft and the camera's own accuracy on legs is not the only limit.
