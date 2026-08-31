@@ -1,0 +1,31 @@
+wholebody-performance: 46 bone-windows from 5 subjects; motions with no re-match: 9
+
+RAW in-pose heading error (deg):
+           n   bias     sd    mae    p95
+bone                                    
+chest   15.0  -4.60   4.75   5.94  10.21
+hip     15.0  -3.59   7.23   6.65  12.26
+shinL    4.0   7.84   7.83   7.84  16.86
+shinR    4.0  -8.01   3.69   8.01  11.77
+thighL   4.0 -11.71  15.17  13.10  25.35
+thighR   4.0  -0.66   4.18   2.99   5.33
+
+After the per-pose bias from the trusted window (what the auto-reset would apply):
+           n   bias     sd    mae    p95
+bone                                    
+chest   15.0   0.34   4.85   3.74   8.26
+hip     15.0   1.46   4.97   3.49  11.23
+shinL    4.0  -3.86   4.71   4.75   8.87
+shinR    4.0  -3.31   7.68   4.71  12.70
+thighL   4.0 -17.13  13.04  18.34  24.24
+thighR   4.0  -2.21   7.95   7.02   9.27
+
+per motion, err_cal MAE:
+motion
+checking_watch          3.44
+cross_legged_sitting    7.20
+crossarms               4.17
+phone_talking           4.83
+scratching_head         5.61
+sitting_down            6.33
+taking_photo            0.92
