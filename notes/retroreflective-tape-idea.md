@@ -1,4 +1,8 @@
-# Retroreflective tape on trackers — David's idea, 2026-08-28
+# Retroreflective tape on trackers — David's idea, 2026-08-28 — **PARKED 2026-08-31 (David: back to markerless for now)**
+
+Everything is ready to resume: marker-mode camera presets (`recorder/camera_ctl.py`),
+blob/bar/ring estimators with tests (`markers.py`), the analysis tools
+(`tools/tape_test.py`, `tools/tape_analyze_video.py`), and the v2 test protocol below.
 
 **Idea.** In night mode the cameras flood the scene with IR from emitters
 around the lens and film the return. Retroreflective tape sends light back
