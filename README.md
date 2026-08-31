@@ -13,14 +13,13 @@ and essentially zero user calibration.
 This is a research project run collaboratively between David and Claude across
 many sessions. Nothing here is a product yet.
 
-**Where it stands (2026-08-27):** the product shape is an *automatic full
-reset in familiar poses* (standing reset pose, seated relaxed idle) rather
-than correction during arbitrary motion; off-the-shelf 2D detectors have a
-structural, pose-dependent heading error (5–13° after averaging) that model
-size does not fix, but it is repeatable within a pose (~2°) and therefore
-learnable in the trusted window after a manual reset. The own-room recorder
-and sync beacon are built; first real recordings are the next step. Details
-in `STATE.md` and the report.
+**Where it stands (2026-08-31):** the product shape is an *automatic full
+reset in familiar poses* (D33). The full markerless chain — calibration,
+triangulation, observable-axis headings, pose templates, per-pose bias,
+in-pose measurement — is coded and passed its first test on MoVi (chest/hip
+3.5°, shins 4.7° MAE, inside the 5° budget). Next: the first own-room
+recording session (exp 08, needs the beacon hardware). The retroreflective-
+marker track is parked but ready (D35). Details in `STATE.md` and the report.
 
 ## How to navigate
 

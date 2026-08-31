@@ -1,14 +1,18 @@
 # STATE — read first
 
-_Last updated: 2026-08-27 (sessions 1–2: framing, literature §A–§H, exps 01–05, MoVi pilot, recorder + beacon built)_
+_Last updated: 2026-08-31 (end of session; context handoff). Conventions: `CLAUDE.md`. Full narrative: `docs/05-report-2026-08-26.md` + shareable page (see Reports)._
 
-## Status
+## Status — one paragraph
 
-Phase 1 → 2. Framing settled (D1–D34). Literature grounded (§A–§H, 37 notes). Synthetic harness (exps 01–02) and real-detector measurements on MoVi (exps 04–05, 5 subjects × 3 detectors) done. **Product shape: automatic full reset in familiar poses (D33).** Recorder + sync beacon built and verified on synthetic video; DriftLogger extended for HMD/controllers. **Next: first own-room recordings (needs David's hardware step), then the familiar-pose reset pipeline.**
+The product shape is settled (D33): an **automatic full reset in familiar poses** — the camera learns what the user's reset pose and idle stances look like while the IMU is trusted (right after a manual reset), and later re-performs the equivalent of a full reset whenever such a pose recurs; heavy activity is followed by a manual reset as today. The whole markerless chain exists in code and passed its first test (exp 07 on MoVi): **chest 3.5–3.7°, hip 3.5°, shins ~4.7° MAE — inside the 5° budget** after per-pose calibration; thighs follow the pose assumption. Everything is now blocked on **exp 08: the first own-room recording session** (David's hardware step). The retroreflective-marker track is parked but fully ready (D35).
 
-## Working hypothesis (validated by VIP 2018 ablation; heading accuracy still unmeasured)
+## What is established (with where it's proven)
 
-The correction we actually need is **per-tracker yaw offset** (heading about world vertical), applied occasionally. Pitch/roll are gravity-referenced and do not drift. Position in SlimeVR is derived by forward kinematics from orientations, so yaw drift on a bone *is* the position drift of everything distal to it. If the camera can tell us each limb's heading with a few degrees of accuracy during a still moment, that is enough — we do not need full real-time 3D pose fusion. See `docs/01-approach.md`.
+- Drift is motion-driven and unpredictable per unit; no offline model (D24–D26; drift-lab FINDINGS).
+- Off-the-shelf 2D detectors have a structural, pose/view-dependent heading error (5–13° after averaging) unchanged by model size, resolution, or dataset (exps 04, 06; MoVi + TotalCapture). Within one pose it is ~2° repeatable → learnable (exp 05, D32).
+- Bone reliability: feet ≈ chest > shins > hip > thighs (D30). Vertical bones need lateral features; compare the same physical axis on camera and IMU sides (exp 01).
+- Calibration is not the bottleneck (~0.5–2° from people; HMD fixes scale) (§D synthesis, D15).
+- Licences: NC datasets (MoVi, TotalCapture, AMASS/SMPL-X/BEDLAM) are evaluation-only; training data = own recordings + community donations + permissive mocap (D34).
 
 ## Decisions
 
@@ -50,69 +54,32 @@ The correction we actually need is **per-tracker yaw offset** (heading about wor
 | D35 | 2026-08-31 | Retroreflective markers **parked** (not dropped): main line is markerless (D33 familiar-pose automatic reset). All marker tooling stays ready — camera presets, blob/bar/ring estimators, test protocol in `notes/retroreflective-tape-idea.md`. | David: 'leave this ready for next time, but back to no reflective tape'. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
 
-## Open questions (blocking or shaping)
+## Open questions
 
-- **Q17 Measure σ_m** — protocol agreed in principle: `experiments/03-onbody-drift/PROTOCOL.md` (worn set, reset in a jigged known pose, move, return + hold, repeat; DriftLogger raw @100 Hz, not BVH). Waiting on David to run it.
-- Q16 (demoted) net turning per minute in VR play — matters only for the minor yaw-scale term.
-- Q20 (parked, see D35) first test 2026-08-28: tape retroreflects (saturated, ≥4× contrast) but blobs are only 3–6 px across at 3–5 m with the wide lens; glasses/case edges compete. Feasible-but-marginal → next: bigger patches (≥2 cm), microprismatic tape, night test, targety≈10. Camera control fully scripted (both cameras). Earlier note: camera's IR LED can be forced on; tape 'kind of works' in daylight. Next: force night mode (IR-cut out) + manual low exposure; frames into `/mnt/data2/.../tape-test/`. ONVIF endpoint of camera 1: http://192.168.15.60:8080/ (LAN). Consider microprismatic tape if glass-bead.
-- **Q20 Retroreflective tape feasibility** (`notes/retroreflective-tape-idea.md`): do the cameras show saturated blobs from tape on a tracker at 3–5 m in night mode, and can night mode be forced under room light? A 10-minute test decides whether passive-marker tracking bypasses the detector-bias problem for position/heading.
-- **Q21 OpenIPC on the cameras?** HiChip/'Hipcam' family (V32 firmware) → likely HiSilicon/Goke SoC in OpenIPC's list; needs the chip marking (open case) or UART banner to confirm; camera is on Wi-Fi (OpenIPC's weak spot — prefer Ethernet). Benefits: security, true manual exposure/IR control, on-camera blob detection + hardware timestamps. Plan: tape test on stock first; flash one camera after confirming SoC + Ethernet.
-- Q6b ANSWERED: camera control module works (`recorder/camera_ctl.py`, `-image_type=0` trick; `targety` sets exposure; IR LED switchable). Camera 1: IPCAM/hi3510-family, 1080p H.264 @ 20 fps, RTSP open without auth, CGI (IR-cut/IR LED/exposure) needs web login → **David: put camera user,password in `/mnt/data2/david/work/slimevr-camera-data/cameras/.access`** so the system can set night mode/exposure itself. Night mode exists but may not be switchable at will (David) — test: does day mode see 850 nm at all? Which models expose night mode via ONVIF/API?
-- Q14 Can the cameras see the Quest 3 Touch Plus controllers' IR LEDs in night mode? (would make them free tracked fiducials)
+- Q21 OpenIPC on the cameras (HiChip/Hipcam; SoC marking or UART banner needed; prefer Ethernet). Parked until David opens a case.
+- Q14 Do the cameras see the Quest Touch Plus IR LEDs in night mode? (free fiducials; untested)
+- Template-matching threshold tuning (exp 07: ~¼ of segments never re-matched).
+- Exp 03 (on-body drift, optional); Fit3D account (backup dataset).
 
 ## Next actions
 
-1. **David — hardware for the own-room recorder:** flash `firmware/beacon/beacon.ino` on a spare Wemos D1 mini (LED on D1/GPIO5 + resistor; see `firmware/beacon/README.md`), plug into the recording PC; mount the 2 RTSP cameras (~2–3 m high, ±30–45° in front); rebuild the server from the `drift-logger` branch (commit 8fe456e1 adds HMD/controller positions). Then a first session per `docs/06-recorder-beacon.md` §protocol.
-2. Session tooling DONE: `recorder/events.py` (interactive reset/pose marks on the wall clock), `recorder/session.py` (run-folder loader: frame times, events, DriftLogger, trusted windows, holds). Blob detector + epipolar matching + triangulation for the tape idea in `markers.py` (tested on synthetic blobs: 5 cm separations to < 4 mm). Waiting on David's hardware/tape frames.
-3. Exp 07 DONE at MoVi scale: familiar-pose template + per-pose bias + in-pose measurement gives chest 3.7° / hip 3.5° / shins ~4.7° MAE (inside budget); thighs unreliable as expected; 9/35 segments failed to re-match (threshold tuning). `familiar.py` is the pipeline core. Full evaluation needs own recordings (exp 08). Remaining D33 build: familiar-pose detector (templates learned while trusted: standing reset + seated idle); in-pose measurement of pelvis/chest/feet headings and bone directions (3-DoF, D31); per-pose bias learned in the trusted window (D32); application through the full-reset path; confidence → prompt. Evaluate first on MoVi still stances, then on own recordings.
-4. **HMD gap, cheap first (§H):** off-the-shelf detectors on own headset footage; label ~200 frames; test headset copy-paste augmentation on COCO before any rendering.
-5. **Runtime scheduler:** per-unit drift statistics from successive corrections; bone weighting per D30.
-6. **TotalCapture — access GRANTED 2026-08-27** (validation only, D34). S1 metadata downloaded (IMU, gyro/mag, Vicon ori/pos, BVH, calibration); loader `data/totalcapture.py` with verified conventions (gt quats xyzw; positions Y-up inches; calibration metres; 60 Hz aligned). Video per sequence is one tar with all 8 cams (0.8–1.6 GB); s1_walking1 downloading. s1/walking1 video extracted; camera pair cam1+cam8 (42° apart, ~5 m, 2.4 m high ≈ David's room) + cam2+cam7 (118°) alternative; reprojection verified. Detection (wholebody-performance + body-balanced, 4 cams) running on vulcanus; `experiments/06-totalcapture-loop/evaluate.py` written (stage A detector error vs Vicon at 1080p; stage B end-to-end: calibrated Xsens + injected drift → still-window camera yaw correction → error vs Vicon). Credentials stay outside the repo.
-   Later: exp 03 (optional); literature §F (CPU inference/quantisation) when a model is chosen; Blender render pipeline only if the cheap HMD test fails.
+1. **David — exp 08 hardware:** flash `firmware/beacon/beacon.ino` on a Wemos D1 mini (LED on D1/GPIO5 + resistor; `firmware/beacon/README.md`), plug into the recording PC; both cameras mounted; rebuild the server from the `drift-logger` branch (8fe456e1). Session protocol: `docs/06-recorder-beacon.md`.
+2. **First session → exp 08:** record per protocol (events via `python -m slimevr_camera.recorder.events`); Claude assembles the run (`recorder/session.py`), decodes frame times (`recorder/decode.py`), calibrates cameras (D15 path — to implement: HMD-trajectory + keypoint calibration), runs the familiar-pose loop on genuinely recurring poses, measures the real reset-horizon extension.
+3. **Camera extrinsics for the own room** — the one uncoded piece of the chain: Umeyama HMD-trajectory alignment + cam-cam relative pose from keypoints (see `docs/01-approach.md` §2 / D15).
+4. Then: pose-conditioned correction model (D32) trained on licence-clean data; runtime scheduler with bone weighting (D30); server integration through the Stay Aligned yaw slot (`Tracker.kt:300`, D22) extended to 3-DoF (D31).
+5. Parked, ready to resume: retroreflective markers (D35, `notes/retroreflective-tape-idea.md`); OpenIPC (Q21); TotalCapture further subjects (validation only).
+
+## Code map (details in CLAUDE.md)
+
+`src/slimevr_camera/`: skeleton/geometry/heading/pipeline (core), `familiar.py` (D33 templates + in-pose measurement), `markers.py` (parked marker track), `synth/`, `data/movi.py` + `data/totalcapture.py` (verified loaders), `recorder/` (capture, beacon, decode, events, session, camera_ctl). Experiments 01–07 each with README + results. GPU box `vulcanus` via `tools/vulcanus-setup.sh`.
 
 ## Reports
 
-- Session 1 (2026-08-26): `docs/05-report-2026-08-26.md` (figures in `docs/figures/`); shareable page https://claude.ai/code/artifact/607b9343-0b9e-49be-a738-fd80362a6b70 (redeploy from `scratchpad/slimevr-camera-report.html` builder in session history — regenerate from the md if lost).
+- Session report (kept current): `docs/05-report-2026-08-26.md`; shareable page https://claude.ai/code/artifact/607b9343-0b9e-49be-a738-fd80362a6b70 (rebuild: `uv run python tools/build-report.py OUT.html`, republish same scratchpad path).
 
-## Log
+## Session log (condensed)
 
-- 2026-08-26 — Q18 answered: RTX 3090 is in `vulcanus` (david@192.168.15.27, SSH). GPU work goes there (see CLAUDE.md §7).
-- 2026-08-26 — Exp 04 interim: detector heading error is temporally correlated / pose-dependent; averaging doesn't fix it (see experiment README). vulcanus GPU set up (65 fps RTMPose-m, cu12 ORT via pyproject).
-- 2026-08-26 — Exp 04 started on MoVi: loader, download, calibration verified, detection running. Datasets now live on /mnt/data2 (root volume 95 % full).
-- 2026-08-31 — Exp 07: automatic-full-reset measurement path validated on MoVi (chest/hip/shins inside 5° after per-pose calibration).
-- 2026-08-31 — Marker track parked (D35); main line = markerless familiar-pose reset.
-- 2026-08-28 — Marker v2 estimators in `markers.py`: bar orientation from blob moments → 3D bar line from two views (~3° in synthetic test), ring ellipse axis for strap bands. Awaiting David's night test with bar+dot and strap band.
-- 2026-08-28 — Tape test #1 on camera 2: patches saturate but are tiny at this distance/lens; recipe for night-vision + IR + exposure scripted.
-- 2026-08-28 — Camera 1 fully controllable via CGI (targety exposure lever, IR LED); night mode already on in daylight; `camera_ctl.py` written. Tape test now needs only the tracker in view.
-- 2026-08-28 — Session tooling (events, run loader) and marker blob detector written; report updated to session 3.
-- 2026-08-28 — Exp 06 acting1: consistent; right leg 20° sd when side-on (view-dependent bias). TotalCapture stage A complete for S1 (3 clips).
-- 2026-08-28 — Exp 06 freestyle1: same detector numbers; TotalCapture has no recurring still poses → cannot test the familiar-pose loop (stage B); that needs own recordings. IMU floor (Xsens vs Vicon) 2–3° torso, 6–10° legs.
-- 2026-08-28 — David: retroreflective tape on trackers (passive markers lit by the cameras' IR illuminators) — could bypass detector bias entirely for tracker position/heading; feasibility test proposed (Q20).
-- 2026-08-28 — Exp 06 stage A (walking1, cam1+cam8, 1080p): same detector error as MoVi at 800×600 — resolution doesn't help either; feet fixed via fitted foot axis. Stage B needs still poses → freestyle1/acting1 detecting on vulcanus.
-- 2026-08-28 — TotalCapture S1 metadata in, loader written, conventions verified; walking1 video downloading.
-- 2026-08-27 — TotalCapture access granted (validation-only per D34).
-- 2026-08-27 — Recorder + beacon implemented (host-driven serial LED, Manchester counter code, ffmpeg copy capture, correlation+fit decoder). Ready for hardware.
-- 2026-08-27 — Q19 → D34: shipped model treated as commercial-adjacent; NC datasets eval-only; clean training data = own + community + permissive mocap.
-- 2026-08-27 — §H synthesis written (5 notes): Blender/XRFeitoria route; all body/motion assets NC (Q19); synthetic supplements real, never replaces; HMD-on-avatar from external cameras is a genuine gap.
-- 2026-08-27 — Exp 04 complete on 5 subjects × 3 detectors (vulcanus): model size irrelevant, confirmed. Seated/idle motions: chest & feet inside budget as-is; hips need per-pose calibration; cross-legged is hardest.
-- 2026-08-27 — Seated relaxed idle added as primary target pose (UX: no more stand-up resets while seated).
-- 2026-08-26 — D33: scope = automatic full reset in familiar poses; user is a participant; heavy-activity drift handled by manual reset.
-- 2026-08-26 — David's notes: IMU-after-reset is the calibration source for the camera (D26 revised); correction must be 3-DoF not yaw-only (D31). Exp 05 planned.
-- 2026-08-26 — §G2 dataset verification: MoVi chosen to start exp 04 (D29); no headset datasets exist.
-- 2026-08-26 — D28: fine-tuning for VR conditions is the core bet; dataset verification (multi-view + marker GT) and BEDLAM/§H feasibility agents launched.
-- 2026-08-26 — David: no offline drift model (D26); effort goes to camera-side robustness + AI training (D27). Exp 03 demoted to optional. No rigid bar exists (protocol fixed).
-- 2026-08-26 — Exp 03 protocol written (David's known-pose return procedure; BVH rejected as post-correction, DriftLogger instead; jig for pose repeatability).
-- 2026-08-26 — Exp 02 revised after David's objection: 'net turning' conclusion retracted; motion-driven random walk added to IMU model; σ_m measurement (drift-lab run E) proposed. D25 rewritten.
-- 2026-08-26 — Exp 02 done (`experiments/02-scale-learning/`): k learnable, gain modest, cadence is driven by net turning (D25, Q16). Also found the IMU-model bias edit had silently failed earlier — now truly aligned.
-- 2026-08-26 — drift-lab FINDINGS read (after a wrong first read caused by the t₀ placeholder pitfall): static drift < 1 °/h; drift is gyro **scale factor** +0.43 % / −0.23 %, opposite signs per unit; thermal tilt 0.8–5.7°. Synthetic IMU defaults now match. New idea: learn per-tracker scale error from successive camera corrections (`notes/drift-lab-numbers.md`).
-- 2026-08-26 — Experiment 01 done: harness works; noise is not the threat, bias and correction frequency are. Key formulation: compare the *same physical axis* on camera and IMU sides (drift rotates every axis' floor projection equally). David suggested game-engine/generative synthetic data → agenda §H.
-- 2026-08-26 — PR #1805 deep-read: monocular 2D projected-direction residual, walk-in-circle for limbs, torso IMU-only; several math bugs; borrow <10% (pinhole classes, LM+numerical Jacobian, recorder, SimCC decoder). Integration slot decided (D22).
-- 2026-08-26 — Q&A round 3: per-bone target (D19), PR #1805 reference-only (D20), specific camera OK (D21).
-- 2026-08-26 — Community search: PR #1805 found and fetched; maintainers favourable (issue #1455); SolarXR has no yaw-correction message — PR #1805's hook is the integration path.
-- 2026-08-26 — §C/§G synthesis: IMU literature never fixes global yaw (TIC 2025 explicitly can't); TotalCapture chosen as benchmark (D18).
-- 2026-08-26 — David proposed IR beacon sync (D17); extensions noted in `notes/ir-beacon-idea.md`.
-- 2026-08-26 — §B synthesis: SMPL regressors 22–25° MPJAE; pivot to triangulated joints → geometric heading (D16). Q13 raised.
-- 2026-08-26 — §D synthesis: calibration is not the bottleneck (≤1–2° achievable); HMD-as-fiducial is consumer-precedented (LIV) but unpublished.
-- 2026-08-26 — §A synthesis written: VIP 2018 is the precedent; heading-only accuracy is unmeasured in literature; RobustCap/DiffCap = evaluation harness.
-- 2026-08-26 — Q&A round 1 answered (D6–D10). Literature pass 1 launched.
-- 2026-08-26 — Project scaffolded. Prior work surveyed: `drift-lab` (rigid bar yaw-drift rig, DriftLogger patch), `sensordump` (2024 raw dumps + toy Kalman), server internals (resets, Stay Aligned, IKSolver, Localizer).
+- 2026-08-26 — Scaffold; Q&A rounds 1–2 (targets, setup, licences); literature pass 1 (§A–§D, §G; 31 notes); PR #1805 found, fetched, deep-read (reference only, D20/D22); exps 01–02 (synthetic harness; axis formulation; drift model revised to motion-driven random walk after David's objection); beacon idea (D17).
+- 2026-08-27 — D26 revised (IMU trusted post-reset ↔ camera drift-free), D31 (3-DoF), D33 (familiar poses, seated idle), D34 (licence policy); exp 04 completed (3 detectors × 5 subjects); exp 05 (per-pose repeatability); §G2+§H syntheses; recorder + beacon built and verified; DriftLogger extended (HMD/controllers).
+- 2026-08-28 — TotalCapture access granted; loader + conventions verified; exp 06 (1080p same as 800×600; IMU floor 2–3°/6–10°; no recurring poses in TC); cameras probed and fully scripted (hi3510 CGI, `image_type` profiles, `targety` exposure, night-vision recipe); tape test #1 (patches saturate but 3–6 px; marker design v2: bar+dot, strap ring; estimators written and tested).
+- 2026-08-31 — Marker track parked (D35); `familiar.py` + exp 07: measurement path inside budget on MoVi. Handoff cleanup.
