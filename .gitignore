@@ -13,3 +13,4 @@ __pycache__/
 src/*.egg-info/
 .pytest_cache/
 data/movi/
+tools/motionbert/MotionBERT/

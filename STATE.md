@@ -1,10 +1,10 @@
 # STATE — read first
 
-_Last updated: 2026-08-31 (end of session; context handoff). Conventions: `CLAUDE.md`. Full narrative: `docs/05-report-2026-08-26.md` + shareable page (see Reports)._
+_Last updated: 2026-09-01. Conventions: `CLAUDE.md`. Full narrative: `docs/05-report-2026-08-26.md` + shareable page (see Reports)._
 
 ## Status — one paragraph
 
-The product shape is settled (D33): an **automatic full reset in familiar poses** — the camera learns what the user's reset pose and idle stances look like while the IMU is trusted (right after a manual reset), and later re-performs the equivalent of a full reset whenever such a pose recurs; heavy activity is followed by a manual reset as today. The whole markerless chain exists in code and passed its first test (exp 07 on MoVi): **chest 3.5–3.7°, hip 3.5°, shins ~4.7° MAE — inside the 5° budget** after per-pose calibration; thighs follow the pose assumption. Everything is now blocked on **exp 08: the first own-room recording session** (David's hardware step). The retroreflective-marker track is parked but fully ready (D35).
+The product shape is settled (D33): an **automatic full reset in familiar poses** — the camera learns what the user's reset pose and idle stances look like while the IMU is trusted (right after a manual reset), and later re-performs the equivalent of a full reset whenever such a pose recurs. **The main line is now single-camera (D36).** Exp 09 (MotionBERT monocular lifting on MoVi, per view) says: **frontal standing familiar poses stay inside the 5° budget with one camera** (1.6–5.3° calibrated on simple standing idles, vs exp 07's 2-cam 3.5–4.7° pooled); **seated poses and side-on views currently fail** (shin depth-flips ~130°; the side view can't even match templates — descriptor normalizer collapses). Part of the seated failure is a protocol artifact MoVi can't fix (no genuinely recurring poses) → the real seated test is exp 08's own-room recording, now one camera. Leading mitigations: IMU-prior flip disambiguation (drift ±few° vs 180° flips), torso-scaled descriptor, view-quality gating. Retroreflective markers parked (D35); 2-cam triangulation parked (D36).
 
 ## What is established (with where it's proven)
 
@@ -13,6 +13,7 @@ The product shape is settled (D33): an **automatic full reset in familiar poses*
 - Bone reliability: feet ≈ chest > shins > hip > thighs (D30). Vertical bones need lateral features; compare the same physical axis on camera and IMU sides (exp 01).
 - Calibration is not the bottleneck (~0.5–2° from people; HMD fixes scale) (§D synthesis, D15).
 - Licences: NC datasets (MoVi, TotalCapture, AMASS/SMPL-X/BEDLAM) are evaluation-only; training data = own recordings + community donations + permissive mocap (D34).
+- Single camera (exp 09, MotionBERT lifting): frontal standing poses ≈ 2-cam quality (1.6–5.3° cal); near-horizontal bones depth-flip ~180°; side-on view fails at the pose gate itself; the lifted pose exposes view quality (image-plane fraction of the lateral axis) as a usable confidence signal. Monocular 3D degrades gate and measurement *together*.
 
 ## Decisions
 
@@ -53,6 +54,7 @@ The product shape is settled (D33): an **automatic full reset in familiar poses*
 | D34 | 2026-08-27 | **Treat the shipped model as commercial-adjacent** (open source, not sold, but used with hardware SlimeVR sells). Training data must be licence-clean: own recordings, community donations under our terms, permissive source mocap (CMU, ACCAD; DanceDB/HDM05 CC BY-SA) on a non-SMPL body if rendered. NC datasets (MoVi, TotalCapture, Fit3D, AMASS/SMPL-X/BEDLAM) are for evaluation and prototyping only. Ask MPI for written permission in parallel. | Q19 answered by David; MPI licence text is purpose-based and overrides the code licence; WHAM/4D-Humans precedent is untested. Not legal advice. |
 | D35 | 2026-08-31 | Retroreflective markers **parked** (not dropped): main line is markerless (D33 familiar-pose automatic reset). All marker tooling stays ready — camera presets, blob/bar/ring estimators, test protocol in `notes/retroreflective-tape-idea.md`. | David: 'leave this ready for next time, but back to no reflective tape'. |
 | D13 | 2026-08-26 | Community data: opt-in raw video is acceptable (HMD anonymizes), derived-only as fallback tier | David. |
+| D36 | 2026-09-01 | **Main line is single-camera.** Evaluate how far one camera gets (exp 09: single-view rerun of exp 07 on MoVi, monocular 3D from cached 2D keypoints through the same familiar-pose pipeline, per view). Two-camera refinement stays a later option; triangulation code kept. Simplifies exp 08 (one camera, no cam–cam extrinsics/sync). | David: any camera the user has laying around is a much more reasonable ask than two; refine with two later if necessary. |
 
 ## Open questions
 
@@ -63,15 +65,15 @@ The product shape is settled (D33): an **automatic full reset in familiar poses*
 
 ## Next actions
 
-1. **David — exp 08 hardware:** flash `firmware/beacon/beacon.ino` on a Wemos D1 mini (LED on D1/GPIO5 + resistor; `firmware/beacon/README.md`), plug into the recording PC; both cameras mounted; rebuild the server from the `drift-logger` branch (8fe456e1). Session protocol: `docs/06-recorder-beacon.md`.
-2. **First session → exp 08:** record per protocol (events via `python -m slimevr_camera.recorder.events`); Claude assembles the run (`recorder/session.py`), decodes frame times (`recorder/decode.py`), calibrates cameras (D15 path — to implement: HMD-trajectory + keypoint calibration), runs the familiar-pose loop on genuinely recurring poses, measures the real reset-horizon extension.
-3. **Camera extrinsics for the own room** — the one uncoded piece of the chain: Umeyama HMD-trajectory alignment + cam-cam relative pose from keypoints (see `docs/01-approach.md` §2 / D15).
+1. **Done (exp 09) → follow-ups to pick from, with David:** (a) IMU-prior depth-flip disambiguation in `familiar.py` (simulate drifted IMU = truth + few ° noise); (b) torso-scaled, view-robust descriptor + view-quality gate; (c) try a stronger monocular estimator later. None blocks exp 08.
+2. **David — exp 08 hardware (now one camera):** flash `firmware/beacon/beacon.ino` on a Wemos D1 mini (LED on D1/GPIO5 + resistor; `firmware/beacon/README.md`), plug into the recording PC; one camera mounted; rebuild the server from the `drift-logger` branch (8fe456e1). Session protocol: `docs/06-recorder-beacon.md`.
+3. **First session → exp 08:** record per protocol (events via `python -m slimevr_camera.recorder.events`); Claude assembles the run (`recorder/session.py`), decodes frame times (`recorder/decode.py`), calibrates the camera (D15 path, simplified by D36: Umeyama HMD-trajectory + floor only, no cam–cam), runs the familiar-pose loop on genuinely recurring poses, measures the real reset-horizon extension.
 4. Then: pose-conditioned correction model (D32) trained on licence-clean data; runtime scheduler with bone weighting (D30); server integration through the Stay Aligned yaw slot (`Tracker.kt:300`, D22) extended to 3-DoF (D31).
-5. Parked, ready to resume: retroreflective markers (D35, `notes/retroreflective-tape-idea.md`); OpenIPC (Q21); TotalCapture further subjects (validation only).
+5. Parked, ready to resume: two-camera triangulation (D36; code stays in `pipeline.py`); retroreflective markers (D35, `notes/retroreflective-tape-idea.md`); OpenIPC (Q21); TotalCapture further subjects (validation only).
 
 ## Code map (details in CLAUDE.md)
 
-`src/slimevr_camera/`: skeleton/geometry/heading/pipeline (core), `familiar.py` (D33 templates + in-pose measurement), `markers.py` (parked marker track), `synth/`, `data/movi.py` + `data/totalcapture.py` (verified loaders), `recorder/` (capture, beacon, decode, events, session, camera_ctl). Experiments 01–07 each with README + results. GPU box `vulcanus` via `tools/vulcanus-setup.sh`.
+`src/slimevr_camera/`: skeleton/geometry/heading/pipeline (core), `familiar.py` (D33 templates + in-pose measurement), `mono.py` (D36 monocular lifting glue: COCO↔H36M-17, world conversion), `markers.py` (parked marker track), `synth/`, `data/movi.py` + `data/totalcapture.py` (verified loaders), `recorder/` (capture, beacon, decode, events, session, camera_ctl). `tools/motionbert/` = isolated uv env for the MotionBERT lifter (checkpoints in `/mnt/data2/.../models/motionbert/`, lifted 3D cached in `data/movi/lift3d/`). Experiments 01–07, 09 each with README + results. GPU box `vulcanus` via `tools/vulcanus-setup.sh`.
 
 ## Reports
 
@@ -83,3 +85,4 @@ The product shape is settled (D33): an **automatic full reset in familiar poses*
 - 2026-08-27 — D26 revised (IMU trusted post-reset ↔ camera drift-free), D31 (3-DoF), D33 (familiar poses, seated idle), D34 (licence policy); exp 04 completed (3 detectors × 5 subjects); exp 05 (per-pose repeatability); §G2+§H syntheses; recorder + beacon built and verified; DriftLogger extended (HMD/controllers).
 - 2026-08-28 — TotalCapture access granted; loader + conventions verified; exp 06 (1080p same as 800×600; IMU floor 2–3°/6–10°; no recurring poses in TC); cameras probed and fully scripted (hi3510 CGI, `image_type` profiles, `targety` exposure, night-vision recipe); tape test #1 (patches saturate but 3–6 px; marker design v2: bar+dot, strap ring; estimators written and tested).
 - 2026-08-31 — Marker track parked (D35); `familiar.py` + exp 07: measurement path inside budget on MoVi. Handoff cleanup.
+- 2026-09-01 — D36 single-camera main line (David). MotionBERT chosen + set up (`tools/motionbert/`, `mono.py`, literature note); exp 09 run (5 subjects × PG1/PG2 × lite/full): frontal standing inside budget, seated + side view fail; view dependence + IMU-prior flip idea documented.
