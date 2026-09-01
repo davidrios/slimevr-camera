@@ -68,6 +68,15 @@ def coco_to_h36m_input(kp: np.ndarray, score: np.ndarray, cam: Camera, min_score
     return out
 
 
+def mirror_depth(X: np.ndarray) -> np.ndarray:
+    """Depth-mirror of lifter output in the camera frame — the monocular flip
+    hypothesis (sign-of-z ambiguity). Headings are direction-based, so the
+    reflection plane's position is irrelevant; negating z suffices."""
+    Y = X.copy()
+    Y[..., 2] *= -1
+    return Y
+
+
 def lifted_to_keypoints(X: np.ndarray, inp: np.ndarray, cam: Camera, world_R: np.ndarray | None = None,
                         min_conf: float = 0.05) -> np.ndarray:
     """Lifter output (T,17,3) -> (T, len(KEYPOINTS), 3) world directions frame.

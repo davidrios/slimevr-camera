@@ -66,6 +66,22 @@ def match_frames(P_seq: np.ndarray, templates: list[Template], max_dist: float =
     return idx, dist
 
 
+def choose_by_prior(meas: dict[str, float], meas_mirror: dict[str, float],
+                    prior: dict[str, float]) -> dict[str, float]:
+    """Monocular depth-flip disambiguation (D36/exp 09b): per tracker, keep
+    whichever of the measured heading and its depth-mirrored hypothesis lies
+    closer to the (drifted, but ±few °) IMU heading. Trackers without a prior
+    or mirror measurement keep the direct measurement."""
+    out = dict(meas)
+    for name, p in prior.items():
+        h, hm = meas.get(name), meas_mirror.get(name)
+        if h is None and hm is not None:
+            out[name] = hm
+        elif h is not None and hm is not None and abs(wrap(hm - p)) < abs(wrap(h - p)):
+            out[name] = hm
+    return out
+
+
 def in_pose_measurement(P_win: np.ndarray, min_quality: float = 0.3) -> dict[str, float]:
     """Measured headings (rad) over a matched window, per tracker, quality-gated."""
     est = estimate_all(P_win)

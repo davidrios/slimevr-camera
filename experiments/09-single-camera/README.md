@@ -60,16 +60,39 @@ motions; full: 24 windows, chest 13.8° cal).
    not the crop normalization it was trained with — treat its numbers as a
    lower bound.
 
-## Ideas this suggests (not yet decided)
+## 09b — IMU-prior flip disambiguation + agreement gate (2026-09-01)
 
-- Resolve depth-flips with the IMU prior: drifted IMU heading is ±few°,
-  flips are ~180° — pick the hypothesis (measured vs z-mirrored) closest to
-  the IMU estimate. Turns the worst monocular failure into a solvable one.
-- Descriptor robustness: scale by torso length (well-observed from any view)
-  instead of hip width; add a view-quality gate.
-- The real seated evaluation needs exp 08's own-room recording (one camera,
-  genuinely recurring seated pose, template learned in-pose).
+Per tracker+window, the measured heading and its depth-mirrored hypothesis
+(`mono.mirror_depth`, sign-of-z in the camera frame) compete for closeness to
+a simulated drifted IMU heading (truth + constant per-window offset
+~N(0, σ); σ=1° in the trusted window). `familiar.choose_by_prior`.
 
-Results: `results/exp09_wholebody-performance_{lite,full}.csv`.
-Run: `uv run python experiments/09-single-camera/evaluate.py --subjects 1 2 3 4 5 --ckpt lite`
+| PG1 lite, calibrated MAE | none | with prior (σ=1–5°, identical) |
+|---|---|---|
+| chest / hip | 13.1 / 11.2° | 11.6 / 9.7° |
+| shins | 51–60° | **24°** |
+| thighs | 41–46° | **28–33°** |
+| legs p95 | 113–147° | 52–73° |
+
+- **Disambiguation halves the leg error and needs almost nothing from the
+  IMU**: σ=1° and σ=5° give identical results — flips are ~180°-class, so
+  even a badly drifted prior separates the hypotheses. The pure z-mirror
+  explains about half the seated error; the rest is genuine monocular
+  degradation (elevation/shape, not a clean flip).
+- **The same prior gives an agreement gate** (`dev_prior` column): apply a
+  correction only when the (bias-corrected) camera heading agrees with the
+  IMU within a tolerance. σ=3°, tol=10°: **38% of correction opportunities
+  kept, torso 3.8° / legs 4.7° MAE, worst kept 13.2°** — stable for σ=1–5°.
+  This is partly circular in simulation (prior ≈ truth) but it *is* the
+  product mechanism: the camera declines rather than mis-corrects; the
+  failure mode is "no automatic reset" (today's status quo), never a bad one.
+  Opportunistic 30–50% coverage of matched windows is enough for D33.
+
+Ideas still open: torso-scaled view-robust descriptor + view-quality gate
+(the side-view gate failure is untouched by 09b); the real seated evaluation
+needs exp 08's own-room recording (template learned genuinely in-pose).
+
+Results: `results/exp09_wholebody-performance_{lite,full}.csv` (09b columns:
+`mode`, `dev_prior`).
+Run: `uv run python experiments/09-single-camera/evaluate.py --subjects 1 2 3 4 5 --ckpt lite --prior-sigmas 1 3 5`
 (lifted 3D cached in `data/movi/lift3d/`).
