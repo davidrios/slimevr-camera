@@ -45,9 +45,9 @@ html = f'''<title>SlimeVR Camera Correction</title>
 <style>{CSS}</style>
 <div class="wrap">
 <header>
-<div class="eyebrow">slimevr-camera · sessions 1–3 · 2026-08-26/28 · David Rios & Claude</div>
+<div class="eyebrow">slimevr-camera · sessions 1–5 · 2026-08-26 → 09-01 · David Rios & Claude</div>
 <h1>Camera-assisted drift correction for SlimeVR trackers</h1>
-<p class="lede col">Can one or two cheap cameras fix the drift of IMU trackers? After three sessions the answer has a shape: not by correcting arbitrary motion, but by performing an <em>automatic full reset</em> whenever the camera sees the user in a pose it learned while the trackers were still trustworthy — standing, or seated and relaxed.</p>
+<p class="lede col">Can a cheap camera fix the drift of IMU trackers? After five sessions the answer has a shape: not by correcting arbitrary motion, but by performing an <em>automatic full reset</em> whenever the camera sees the user in a pose it learned while the trackers were still trustworthy — standing, or seated and relaxed. And the target is now <em>one</em> camera — any camera the user has laying around — with a second as an optional refinement.</p>
 <div class="stats">
 <div class="stat"><div class="v imu">0.4 %</div><div class="l">gyro scale-factor error per turn (drift-lab), plus unpredictable motion-driven drift; static drift &lt; 1 °/h</div></div>
 <div class="stat"><div class="v cam">5–13°</div><div class="l">heading error of off-the-shelf detectors after 1-s averaging (chest → thighs) — unchanged by model size (3 detectors), resolution (800×600 → 1080p) or dataset (MoVi, TotalCapture)</div></div>
@@ -137,6 +137,10 @@ html = f'''<title>SlimeVR Camera Correction</title>
 <h2>4e · The familiar-pose measurement, end to end (experiment 07)</h2>
 <p>The D33 pipeline's measurement path, run on MoVi with the wholebody detector: a heading-invariant pose template and the camera's per-pose bias are learned from the first third of each idle-like motion (standing in for the trusted post-reset window); later frames that match the template get an in-pose measurement — what an automatic full reset would apply.</p>
 <div class="finding"><b>Chest 3.7°, hip 3.5°, shins ~4.7° MAE after the per-pose bias — inside the 5° budget on real detector data.</b> Hip improves from 6.7° raw. Thighs stay unreliable (18° left / 7° right; in the product they follow the reset-pose assumption instead of being measured). About a quarter of segments never re-matched their template — matching needs tuning, and MoVi's 3–8 s motions are a weak proxy for genuinely recurring idle poses. Small n throughout: the decisive evaluation is the own-room recordings.</div>
+<h2>4f · One camera instead of two (experiment 09)</h2>
+<p>David reframed the requirement: a single camera — any camera the user has laying around — is a far more reasonable ask than two, so two-camera triangulation is parked as a refinement. Experiment 09 reran the exp 07 protocol with 3D joints from <em>one</em> view via monocular lifting (MotionBERT on the cached 2D keypoints), treating each MoVi camera separately as "the user's one camera": one is roughly frontal, the other a ~90° side view.</p>
+<div class="finding"><b>Frontal standing familiar poses survive the loss of the second camera: 1.6–5.3° calibrated MAE on simple standing idles — inside the 5° budget, comparable to two cameras.</b> Seated poses currently fail monocular: near-horizontal bones depth-flip by ~180° (a sign-of-depth ambiguity, not noise), and part of the seated chest/hip failure is a protocol artifact — MoVi has no genuinely recurring poses, so the seated bias gets calibrated in the wrong phase of the motion. The side view fails before measurement is attempted: the pose gate's descriptor collapses when the hip line points into the camera. Three mitigations follow: use the drifted-but-±few-degree IMU to reject 180°-class flip hypotheses; a torso-scaled, view-robust pose descriptor; and an explicit view-quality gate — the lifted pose itself reveals how much of the body's lateral axis the camera actually sees. The decisive seated test is the own-room recording, which now needs only one camera.</div>
+
 <h2>5 · Infrastructure</h2>
 <ul>
 <li>Local machine: data and analysis; datasets on <code>/mnt/data2</code>. GPU box <code>vulcanus</code> (RTX 3090): 45–65 fps RTMPose with a CUDA-12 onnxruntime declared in <code>pyproject</code>; 250 GB ext4 image on <code>/mnt/slimevr-data</code>; reproducible via <code>tools/vulcanus-setup.sh</code>.</li>
@@ -154,8 +158,8 @@ html = f'''<title>SlimeVR Camera Correction</title>
 
 <h2>7 · Next steps</h2>
 <ol>
-<li><b>Retroreflective-tape test</b> (David, ten minutes): are the blobs there at 3–5 m in night mode? Then blob detector + triangulation, checked against a ruler.</li>
-<li><b>First own-room recordings.</b> David: flash the beacon sketch on a Wemos D1 mini with an LED, mount the two cameras, rebuild the server from <code>drift-logger</code>, run a session per the protocol (standing reset → seated idle → everyday activity → return to the seated pose, repeated; dance burst + reset at the end). Claude: events-marking tool and a loader for own recordings.</li>
+<li><b>First own-room recordings.</b> David: flash the beacon sketch on a Wemos D1 mini with an LED, mount one camera, rebuild the server from <code>drift-logger</code>, run a session per the protocol (standing reset → seated idle → everyday activity → return to the seated pose, repeated; dance burst + reset at the end). Claude: events-marking tool and a loader for own recordings.</li>
+<li><b>Single-camera hardening:</b> IMU-prior depth-flip disambiguation, view-robust descriptor, view-quality gating (exp 09's three mitigation lines). The retroreflective-tape track and two-camera triangulation stay parked and ready.</li>
 <li><b>Build the automatic full reset in familiar poses.</b> Familiar-pose detector (templates from the manual reset and the seated/idle stances, learned while trusted); in-pose measurement of pelvis, chest and feet headings and bone directions; per-pose bias from the trusted window; application through the full-reset path; confidence → prompt. Evaluate on MoVi still stances, then on own recordings.</li>
 <li><b>Pose-conditioned correction model:</b> global fine-tuning on MoVi / TotalCapture / synthetic-with-headset data, refined per session.</li>
 <li><b>Runtime scheduler:</b> per-unit drift statistics from successive corrections; bone weighting by measured reliability.</li>
